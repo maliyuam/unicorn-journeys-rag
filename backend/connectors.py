@@ -258,6 +258,19 @@ def search_podcasts(term: str, limit: int = 10) -> list[dict]:
 def fetch_rss(feed_url: str, max_items: int | None = None) -> list[dict]:
     import feedparser
 
+    # feedparser accepts a URL, a local path, or raw feed content. Inline
+    # content is inert — it is just parsed — but anything treated as a locator
+    # causes a *fetch*, and this value arrives straight from an API caller. Left
+    # unchecked the endpoint reads local files (file://, bare paths) and proxies
+    # requests to whatever the host can reach, cloud metadata included.
+    source = feed_url.strip()
+    is_inline_document = source.startswith("<")
+    if not is_inline_document and not re.match(r"^https?://", source, re.IGNORECASE):
+        raise ConnectorError(
+            "feed_url must be an http(s) URL (or inline feed XML); "
+            "local paths and other schemes are refused"
+        )
+
     n = max_items or config.DISCOVERY_MAX_RESULTS
     parsed = feedparser.parse(feed_url)
     if parsed.bozo and not parsed.entries:

@@ -472,7 +472,22 @@ document.querySelectorAll("nav button").forEach(btn => btn.onclick = () => {
 });
 
 // --- tiny markdown renderer (headings, bold, italics, lists, quotes, cites) ---
-function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+// Quotes MUST be escaped, not just angle brackets: this output is interpolated
+// into HTML attributes (e.g. href="..."), and everything it renders — video
+// titles, channel names, RSS <link> values — comes from third parties. Without
+// the quote escapes, a feed entry can close the attribute and add its own
+// onmouseover, which then runs same-origin against an API that has no auth.
+function esc(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+// Escaping alone does not make a URL safe to put in href: `javascript:` needs
+// no quotes to execute. Allow only http(s), and neutralise anything else.
+function safeUrl(u) {
+  const s = String(u ?? "").trim();
+  return /^https?:\/\//i.test(s) ? s : "#";
+}
 function renderMd(text) {
   const lines = esc(text || "").split(/\r?\n/);
   let html = "", inList = false;
@@ -848,7 +863,7 @@ function renderCandidates(result) {
       : '<span class="note">new</span>';
     tr.innerHTML = `
       <td><input type="checkbox" data-idx="${i}" ${checked} ${c.already_ingested ? "disabled" : ""}></td>
-      <td><a href="${esc(c.url)}" target="_blank" rel="noopener" style="color:var(--accent2)">${esc(c.title || c.id)}</a>
+      <td><a href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener" style="color:var(--accent2)">${esc(c.title || c.id)}</a>
         <div class="note">${esc((c.reason || ""))}${dur}</div></td>
       <td>${esc(c.channel)}</td>
       <td>${badge}</td>

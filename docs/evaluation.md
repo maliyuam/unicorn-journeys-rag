@@ -118,6 +118,59 @@ flicker in and out between identical runs. On a 17-question set, a difference
 of one question is noise, not a regression. If a change looks like it moved
 hit@k by a single question, run it again before believing it.
 
+## What this harness cannot tell you
+
+Read these before quoting any number from it. They are limits of the design,
+not bugs, and each one bounds a claim you might otherwise make.
+
+**1. There are no unanswerable questions, so refusal is never measured.**
+Every golden is answerable by construction — the evidence was read out of the
+corpus before the question was written. Nothing in the set asks something the
+corpus cannot support, so the harness is structurally unable to detect the
+pipeline's most dangerous failure: answering confidently anyway.
+
+The system currently has no abstention path. Asked about a person who is not
+in the corpus at all, it returns the top-k passages and presents them as an
+answer, with `[S1]` citations that lend the result unearned authority. It only
+declines when the index is completely empty. Before using generated narratives
+as evidence about a real person, add negative controls to the golden set and
+treat "the system produced a narrative" as no indication that it had anything
+to go on.
+
+**2. Retrieval is scored with the founder filter applied.** `evaluate_retrieval`
+passes `founder=` to `hybrid_search`, so each question is answered against one
+founder's chunks — tens of passages, not the whole corpus. `POST /api/ask`
+without a `founder` searches everything, which is a materially harder task.
+The reported hit@k is therefore an upper bound on the open-corpus case, and
+should not be quoted as the system's general retrieval accuracy.
+
+**3. The real golden set is n=17.** A "hit@3 0.529 → 0.706" improvement is
+three questions changing state. On a set this size the confidence interval
+swamps the effect, and Atlas `$vectorSearch` is approximate on top of that.
+These numbers are useful as a regression tripwire and as error-analysis
+prompts. They are not evidence of a general improvement, and nothing here
+supports a claim of statistical significance.
+
+**4. The judge and the generator are the same model family.** Faithfulness,
+hallucination rate and CCS are scored by Claude on Claude's output, with no
+human-labelled subset to calibrate against and no inter-rater agreement
+measured. LLM judges are known to favour their own generations. Treat these as
+internal consistency checks, not independent evaluation. The refinement loop
+compounds it: it keeps whichever draft the same judge prefers.
+
+**5. Results are not reproducible from this repository alone.** Dependencies
+are unpinned (`>=`), so a `fastembed` or model release silently changes
+retrieval; and `goldens.json` is labelled against collected media that is not
+shipped, so nobody else can reproduce the headline numbers. If you intend to
+publish a result, pin the full environment (a lock file and an explicit model
+revision) and archive the corpus separately with its own provenance.
+
+One thing that was checked and is *not* a problem: the golden questions do not
+leak their evidence's vocabulary into the query. Mean content-token overlap
+between question and evidence is 0.14, and only 4 of 17 echo half or more of
+the evidence tokens — so hybrid retrieval's BM25 half is not being flattered by
+questions written to match the passage.
+
 ## Growing the set
 
 Grow it from observed failures — error analysis — not from speculation. When

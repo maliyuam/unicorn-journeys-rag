@@ -36,6 +36,25 @@ later deleted is still caught. If it fires on your branch, rotate the credential
 first and rewrite the history second — a secret that reached a public remote
 should be treated as compromised even after a force-push.
 
+## Untrusted content is a first-class input
+
+This app exists to ingest media written by other people. Two consequences are
+designed for rather than assumed away:
+
+- **The UI renders third-party text** — video titles, channel names, RSS
+  `<link>` values. All of it is HTML-escaped including quotes, and every
+  interpolated `href` is scheme-checked to http(s). This matters because the
+  API has no authentication: script running in the page could otherwise call
+  `POST /api/clear` same-origin and drop the index. Regression tests live in
+  `tests/test_frontend_escaping.py`.
+- **`feed_url` is a fetch instruction from an API caller.** It is restricted to
+  http(s) URLs (or inline feed XML), because the underlying parser would
+  otherwise accept `file://` and local paths, turning the endpoint into a
+  file-read and a request proxy for anything the host can reach — cloud
+  metadata endpoints included. Pinned by `tests/test_connectors.py`.
+
+Neither replaces putting the app behind authentication before exposing it.
+
 ## Deployment notes
 
 The app ships **no authentication**. Every endpoint — including
