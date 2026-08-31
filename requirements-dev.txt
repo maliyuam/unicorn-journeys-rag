@@ -1,0 +1,8 @@
+# Development tooling. Pinned so a lint or test failure is the code's fault,
+# not a new release's.
+#
+#   pip install -r requirements.txt -r requirements-dev.txt
+
+pytest==9.1.1
+ruff==0.16.3
+

@@ -5,106 +5,223 @@
       "id": "s01",
       "question": "When did PaySwift receive its licence from the Central Bank of Nigeria?",
       "founder": "Amara Okonkwo",
-      "evidence": ["granted us a switching and processing licence in November 2018"],
+      "evidence": [
+        "granted us a switching and processing licence in November 2018"
+      ],
       "source_hint": "Sample Interview: Building PaySwift Across Three Markets"
     },
     {
       "id": "s02",
       "question": "How much did PaySwift raise in its Series B, and when?",
       "founder": "Amara Okonkwo",
-      "evidence": ["forty-two million dollar Series B in September 2023"],
+      "evidence": [
+        "forty-two million dollar Series B in September 2023"
+      ],
       "source_hint": "Sample Interview: Building PaySwift Across Three Markets"
     },
     {
       "id": "s03",
       "question": "Was Ghana or Kenya the harder market for PaySwift to enter?",
       "founder": "Amara Okonkwo",
-      "evidence": ["Ghana was harder because we assumed the Nigerian playbook would transfer"],
+      "evidence": [
+        "Ghana was harder because we assumed the Nigerian playbook would transfer"
+      ],
       "source_hint": "Sample Interview: Building PaySwift Across Three Markets"
     },
     {
       "id": "s04",
       "question": "What does Amara Okonkwo say the real constraint on building a payments company is?",
       "founder": "Amara Okonkwo",
-      "evidence": ["The constraint is trust and distribution"],
+      "evidence": [
+        "The constraint is trust and distribution"
+      ],
       "source_hint": "Sample Interview: Building PaySwift Across Three Markets"
     },
     {
       "id": "s05",
       "question": "What actually caused SolaraGrid's default rate to spike in 2019?",
       "founder": "Thabo Molefe",
-      "evidence": ["installed by one particular subcontractor in Limpopo"],
+      "evidence": [
+        "installed by one particular subcontractor in Limpopo"
+      ],
       "source_hint": "Sample Podcast: Off-Grid Power and the Pay-As-You-Go Model"
     },
     {
       "id": "s06",
       "question": "How do SolaraGrid customers pay for their solar home systems?",
       "founder": "Thabo Molefe",
-      "evidence": ["paid by mobile money in daily increments of around twelve rand"],
+      "evidence": [
+        "paid by mobile money in daily increments of around twelve rand"
+      ],
       "source_hint": "Sample Podcast: Off-Grid Power and the Pay-As-You-Go Model"
     },
     {
       "id": "s07",
       "question": "How many households had SolaraGrid connected by 2023?",
       "founder": "Thabo Molefe",
-      "evidence": ["three hundred thousand connected households in 2023"],
+      "evidence": [
+        "three hundred thousand connected households in 2023"
+      ],
       "source_hint": "Sample Podcast: Off-Grid Power and the Pay-As-You-Go Model"
     },
     {
       "id": "s08",
       "question": "In which countries does SolaraGrid operate?",
       "founder": "Thabo Molefe",
-      "evidence": ["across South Africa, Zambia and Mozambique"],
+      "evidence": [
+        "across South Africa, Zambia and Mozambique"
+      ],
       "source_hint": "Sample Podcast: Off-Grid Power and the Pay-As-You-Go Model"
     },
     {
       "id": "s09",
       "question": "What change finally made MedixCare start growing?",
       "founder": "Leila Haddad",
-      "evidence": ["integrated with three private insurers in 2020"],
+      "evidence": [
+        "integrated with three private insurers in 2020"
+      ],
       "source_hint": "Sample Interview: Telehealth, Trust and Regulation"
     },
     {
       "id": "s10",
       "question": "How many consultations did MedixCare handle in 2024?",
       "founder": "Leila Haddad",
-      "evidence": ["just over two million consultations in 2024"],
+      "evidence": [
+        "just over two million consultations in 2024"
+      ],
       "source_hint": "Sample Interview: Telehealth, Trust and Regulation"
     },
     {
       "id": "s11",
       "question": "What does Leila Haddad say is the hardest part of running a telehealth company?",
       "founder": "Leila Haddad",
-      "evidence": ["Clinical quality control at scale"],
+      "evidence": [
+        "Clinical quality control at scale"
+      ],
       "source_hint": "Sample Interview: Telehealth, Trust and Regulation"
     },
     {
       "id": "s12",
       "question": "What is AgriLink's core promise to farmers?",
       "founder": "Kwame Mensah",
-      "evidence": ["we guarantee a price at planting time rather than at harvest"],
+      "evidence": [
+        "we guarantee a price at planting time rather than at harvest"
+      ],
       "source_hint": "Sample Interview: Smallholder Logistics and the Aggregation Problem"
     },
     {
       "id": "s13",
       "question": "How much did AgriLink lose on maize in 2021?",
       "founder": "Kwame Mensah",
-      "evidence": ["six hundred thousand dollars in one season"],
+      "evidence": [
+        "six hundred thousand dollars in one season"
+      ],
       "source_hint": "Sample Interview: Smallholder Logistics and the Aggregation Problem"
     },
     {
       "id": "s14",
       "question": "Why does Kwame Mensah refuse to lend to the farmers AgriLink buys from?",
       "founder": "Kwame Mensah",
-      "evidence": ["am I her creditor or her partner"],
+      "evidence": [
+        "am I her creditor or her partner"
+      ],
       "source_hint": "Sample Interview: Smallholder Logistics and the Aggregation Problem"
     },
     {
       "id": "s15",
       "question": "How many farmers work with AgriLink, and where?",
       "founder": "Kwame Mensah",
-      "evidence": ["thirty-one thousand across Ghana and Cote d'Ivoire"],
+      "evidence": [
+        "thirty-one thousand across Ghana and Cote d'Ivoire"
+      ],
       "source_hint": "Sample Interview: Smallholder Logistics and the Aggregation Problem"
+    }
+  ],
+  "_negative_controls_comment": "Questions the sample corpus CANNOT answer. They carry no evidence by design, so they are kept out of `goldens` (where an evidence-less entry is reported as a broken label) and scored separately by evaluate_abstention(). Without these the harness cannot see the pipeline's most dangerous failure: answering confidently, with citations, when nothing retrieved supports an answer. n13 is deliberately adversarial - it shares common tokens ('2019', 'won') with a passage about a default-rate crisis, which defeated a content-word heuristic on its own.",
+  "negative_controls": [
+    {
+      "id": "n01",
+      "founder": "Amara Okonkwo",
+      "question": "What is Amara Okonkwo's annual salary?",
+      "why": "compensation is never discussed"
+    },
+    {
+      "id": "n02",
+      "founder": "Amara Okonkwo",
+      "question": "Which university did Amara Okonkwo attend?",
+      "why": "no education history in the transcript"
+    },
+    {
+      "id": "n03",
+      "founder": "Amara Okonkwo",
+      "question": "What did Amara Okonkwo say about quantum computing?",
+      "why": "topic absent; passages are about payments"
+    },
+    {
+      "id": "n04",
+      "founder": "Amara Okonkwo",
+      "question": "How many children does Amara Okonkwo have?",
+      "why": "no personal or family detail"
+    },
+    {
+      "id": "n05",
+      "founder": "Thabo Molefe",
+      "question": "What is SolaraGrid's share price?",
+      "why": "private company; no share price exists"
+    },
+    {
+      "id": "n06",
+      "founder": "Thabo Molefe",
+      "question": "What did Thabo Molefe say about cryptocurrency mining?",
+      "why": "topic absent"
+    },
+    {
+      "id": "n07",
+      "founder": "Thabo Molefe",
+      "question": "Where did Thabo Molefe go on holiday last year?",
+      "why": "no personal detail"
+    },
+    {
+      "id": "n08",
+      "founder": "Leila Haddad",
+      "question": "What is MedixCare's policy on dental insurance?",
+      "why": "adjacent topic (insurance) but dental never mentioned"
+    },
+    {
+      "id": "n09",
+      "founder": "Leila Haddad",
+      "question": "What did Leila Haddad say about veterinary medicine?",
+      "why": "adjacent domain, absent subject"
+    },
+    {
+      "id": "n10",
+      "founder": "Kwame Mensah",
+      "question": "How much does AgriLink pay its chief financial officer?",
+      "why": "no compensation figures and no named CFO"
+    },
+    {
+      "id": "n11",
+      "founder": "Kwame Mensah",
+      "question": "What did Kwame Mensah say about deep sea fishing?",
+      "why": "topic absent"
+    },
+    {
+      "id": "n12",
+      "founder": null,
+      "question": "What did Zenobia Farthingale say about her IPO?",
+      "why": "this person does not exist in the corpus"
+    },
+    {
+      "id": "n13",
+      "founder": null,
+      "question": "Who won the 2019 Formula One championship?",
+      "why": "general knowledge; shares common tokens with the corpus"
+    },
+    {
+      "id": "n14",
+      "founder": null,
+      "question": "What is the capital of Mongolia?",
+      "why": "general knowledge, wholly unrelated"
     }
   ]
 }

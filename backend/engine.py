@@ -22,6 +22,7 @@ from .chunking import chunk_transcript
 from .embeddings import build_embedder
 from .evaluation import evaluate_ccs, evaluate_faithfulness, refine_narrative
 from .generation import citation_map, generate_answer, generate_narrative
+from .grounding import assess_support
 from .ingest import IngestError, validate_doc
 from .llm import get_llm
 from .rerank import get_reranker
@@ -237,15 +238,45 @@ class Engine:
         chunks = hybrid_search(
             self.store, self.embedder, question, subqueries, k=k, founder=founder
         )
-        answer = generate_answer(llm, question, chunks) if chunks else (
-            "No indexed content matches this question. Ingest transcripts first."
+
+        # Retrieval ranks; it does not judge. Before answering, check that the
+        # passages actually carry what was asked — otherwise the pipeline
+        # writes a fluent answer from the least-unrelated paragraphs and cites
+        # them, which is indistinguishable from a sourced fact.
+        company = chunks[0].get("company", "") if chunks else ""
+        support = assess_support(
+            llm, question, chunks, founder or "", company,
+            min_similarity=getattr(self.embedder, "abstain_min_similarity", None),
         )
+        if not support.supported:
+            return {
+                "question": question,
+                "subqueries": subqueries,
+                # No chunks and no citations. Returning the passages "for
+                # context" is how an unsupported answer gets citations anyway:
+                # the UI renders them as sources and the distinction is lost.
+                "chunks": [],
+                "citations": {},
+                "answer": (
+                    "**This corpus cannot answer that question.**\n\n"
+                    f"{support.reason.rstrip('.')}.\n\n"
+                    "No sources are cited because none of the retrieved passages "
+                    "support an answer. Ingest material that covers this topic, or "
+                    "ask something the corpus does cover."
+                ),
+                "abstained": True,
+                "support": support.as_dict(),
+                "llm_mode": llm.mode,
+            }
+
         return {
             "question": question,
             "subqueries": subqueries,
             "chunks": chunks,
             "citations": citation_map(chunks),
-            "answer": answer,
+            "answer": generate_answer(llm, question, chunks),
+            "abstained": False,
+            "support": support.as_dict(),
             "llm_mode": llm.mode,
         }
 
@@ -331,3 +362,5 @@ def get_engine() -> Engine:
             if _engine is None:
                 _engine = Engine()
     return _engine
+
+

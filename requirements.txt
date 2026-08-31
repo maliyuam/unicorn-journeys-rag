@@ -1,22 +1,44 @@
-fastapi>=0.115
-uvicorn>=0.30
+# Pinned for reproducibility.
+#
+# Retrieval quality depends on library and model versions, so a floating `>=`
+# range means two people running the same golden set can legitimately get
+# different numbers and neither can tell why. Exact pins make a run
+# reproducible; `requirements-dev.txt` holds the tooling.
+#
+# To upgrade: change a pin, run
+#     EVAL_GOLDENS_FILE=goldens.samples.json python scripts/evaluate.py --retrieval
+# and put the before/after numbers in the PR. Do not bump these casually — the
+# embedding and reranker models are what retrieval quality actually rests on.
+#
+# Verified together on Python 3.11, 3.12 and 3.14.
+
+fastapi==0.141.1
+uvicorn==0.52.0
 # Required by FastAPI to parse the multipart upload on /api/ingest/upload.
 # FastAPI imports it internally, so nothing in this codebase imports it by name
 # — but without it the app raises at IMPORT time and never starts at all.
-python-multipart>=0.0.9
+python-multipart==0.0.32
 # Used directly for the request models in backend/app.py. It arrives as a
 # FastAPI dependency anyway; declaring it keeps that implicit reliance honest.
-pydantic>=2.0
-anthropic>=0.120
-pymongo>=4.10
-python-dotenv>=1.0
-numpy>=2.0
-scikit-learn>=1.5
-yt-dlp>=2025.1.1
-feedparser>=6.0
-youtube-transcript-api>=0.6
-requests>=2.31
-fastembed>=0.4
+pydantic==2.13.4
+
+anthropic==0.120.2
+pymongo==4.17.0
+python-dotenv==1.2.2
+
+numpy==2.4.3
+scikit-learn==1.8.0
+
+yt-dlp==2026.7.4
+feedparser==6.0.14
+youtube-transcript-api==1.2.4
+requests==2.34.2
+
+# Embeddings + reranking. The MODEL names are pinned in backend/config.py
+# (SENTENCE_TRANSFORMER_MODEL, RERANK_MODEL) — pinning the library alone does
+# not pin the weights it downloads.
+fastembed==0.8.0
+
 # Optional upgrades (uncomment to enable):
 # sentence-transformers>=3.0   # local neural embeddings (BAAI/bge-small-en-v1.5)
 # voyageai>=0.3                # hosted embeddings via VOYAGE_API_KEY

@@ -10,6 +10,7 @@ transcript
    ↓  store.py         MongoDB $vectorSearch → cosine fallback | local numpy index
    ↓  retrieval.py     multi-query expansion → dense + BM25 → reciprocal-rank fusion
    ↓  rerank.py        cross-encoder, blended with the fusion order
+   ↓  grounding.py     do these passages answer the question? if not, ABSTAIN
    ↓  generation.py    grounded answer/narrative with inline [S1]…[Sn] citations
    ↓  evaluation.py    faithfulness · hallucination rate · Context Completeness Score
    ↓  engine.py        refinement loop: regenerate flagged claims, keep the better draft
@@ -107,11 +108,14 @@ extractive output is never mistaken for model output.
 
 ## Prompts
 
-All model-facing prompts live beside the code that calls them
-(`generation.py`, `evaluation.py`, `retrieval.py`, `connectors.py`) and share a
-common brief about what the corpus actually is: **machine transcripts**. They
-garble proper nouns ("michelle eligbe" for Mitchell Elegbe), carry no
-punctuation or casing, and never label speakers.
+All model-facing prompts live in **one file**, `backend/prompts.py`, and
+nothing else under `backend/` contains prompt text. Read them with
+`python scripts/show_prompts.py --full`, and see [prompts.md](prompts.md) for
+what each one does and how to change it safely.
+
+They share a common brief about what the corpus actually is: **machine
+transcripts**. They garble proper nouns ("michelle eligbe" for Mitchell
+Elegbe), carry no punctuation or casing, and never label speakers.
 
 Prompts that ignore this produce two specific failures: inventing a second
 person out of a transcription error, and attributing a host's or panellist's
@@ -161,6 +165,8 @@ backend/
   embeddings.py     voyage | fastembed (default) | sentence-transformers | tf-idf
   store.py          MongoDB ($vectorSearch → cosine fallback) | local numpy
   retrieval.py      multi-query expansion, BM25, RRF hybrid fusion
+  grounding.py      decides whether to answer at all (abstention gate)
+  prompts.py        every model-facing prompt, in one file
   rerank.py         cross-encoder reranking, blended with fusion
   attribution.py    LLM audit: does the founder actually appear in this source?
   generation.py     cited narratives & answers (+ offline extractive)
@@ -184,5 +190,6 @@ data/
 
 scripts/            evaluate · rechunk · sync_to_mongo · audit_attribution ·
                     audit_attribution_llm · check_cookies · start_mongodb
-tests/              70 tests: ingest, connectors, sweep, eval harness, samples
+tests/              96 tests: ingest, connectors, sweep, eval harness,
+                    samples, grounding, prompts
 ```

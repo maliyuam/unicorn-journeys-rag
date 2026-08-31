@@ -67,6 +67,44 @@ The loop at the end is the point: when the judge finds unsupported claims, the
 narrative is **regenerated** with those claims flagged, re-judged, and the
 better draft is kept.
 
+## It refuses questions the corpus cannot answer
+
+Ask about something your corpus does not cover and you get a refusal, not a
+confident answer stitched from the least-unrelated paragraphs:
+
+> **This corpus cannot answer that question.** Only 0% of the question's
+> distinctive words appear in the retrieved passages — the corpus does not
+> appear to cover this.
+>
+> No sources are cited because none of the retrieved passages support an answer.
+
+This matters more than it sounds. Retrieval always returns its best *k*
+passages; "best" is a ranking, not a finding. Without a gate in front of it,
+the pipeline answers anything and attaches `[S1]` citations to whatever came
+back — and a citation reads as evidence. That is how a system produces a
+sourced-looking claim about something nobody ever said.
+
+`backend/grounding.py` decides. With credentials it is a model judgement;
+offline it combines three measured signals. Every evaluation run scores it
+against questions the corpus provably cannot answer, and reports a
+`false_answer_rate`. Turn it off with `ABSTAIN_ENABLED=0` if you want the old
+behaviour; the trade-off is documented in
+[docs/evaluation.md](docs/evaluation.md#what-this-harness-cannot-tell-you).
+
+## Every prompt is in one file
+
+[`backend/prompts.py`](backend/prompts.py) holds every prompt the system sends
+to a model — nothing else under `backend/` contains prompt text. To read them
+without reading code:
+
+```bash
+python scripts/show_prompts.py --full
+```
+
+[docs/prompts.md](docs/prompts.md) explains what each one is for, when it
+fires, what happens without credentials, and which instructions exist because
+their absence caused a specific failure.
+
 ## The sample corpus is fictional, on purpose
 
 `data/samples/` contains four invented interviews with invented founders at
@@ -125,6 +163,8 @@ that matter most:
 | `RERANK_ENABLED` | `1` | Cross-encoder reranking. `0` still retrieves, just less precisely. |
 | `DEFAULT_TOP_K` | `7` | Passages per query. The paper's measured optimum. |
 | `EVAL_GOLDENS_FILE` | `goldens.json` | Which golden set to score against. |
+| `ABSTAIN_ENABLED` | `1` | Refuse questions the corpus cannot support. `0` restores answer-anything behaviour. |
+| `MODEL_CACHE_DIR` | user cache dir | Where embedding/reranker models are cached. |
 
 Several defaults are **measured, not guessed** — `FUSION_POOL_MULTIPLIER` and
 `CHUNK_TARGET_WORDS` in particular. Raising the fusion pool dropped hit@7 from
@@ -193,7 +233,7 @@ including the three-way error analysis behind the reranker:
 | Grounding | Uncited | **Inline `[S1]…[Sn]` citations**, traceable in the UI |
 | Evaluation | Free-text JSON judge | Claim-level judge with **strict schemas** + offline lexical fallback |
 | Refinement | Manual re-prompt | **Automatic**: regenerate flagged claims, re-judge, keep the better draft |
-| Interface | Scripts only | **Web UI** + JSON API + 70 tests |
+| Interface | Scripts only | **Web UI** + JSON API + 96 tests |
 
 ## Documentation
 
@@ -201,6 +241,7 @@ including the three-way error analysis behind the reranker:
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | How each stage works and why it is built that way |
 | [docs/evaluation.md](docs/evaluation.md) | The harness, the metrics, and the error analysis |
+| [docs/prompts.md](docs/prompts.md) | Every prompt: what it does, when it fires, how to change it |
 | [docs/data-collection.md](docs/data-collection.md) | Connectors, rate limits, cookies, attribution audits |
 | [docs/deployment.md](docs/deployment.md) | Local, Docker, Compose, MongoDB Atlas |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Setup, the bar for changes, good first issues |
@@ -209,9 +250,9 @@ including the three-way error analysis behind the reranker:
 ## Development
 
 ```bash
-pip install -r requirements.txt && pip install pytest ruff
+pip install -r requirements.txt -r requirements-dev.txt
 ruff check .
-python -m pytest tests/ -q     # 70 tests
+python -m pytest tests/ -q     # 96 tests
 ```
 
 The suite needs no credentials and never touches a configured MongoDB — a

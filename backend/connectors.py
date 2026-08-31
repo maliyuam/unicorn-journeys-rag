@@ -23,6 +23,7 @@ import requests
 from . import config
 from .ingest import parse_captions
 from .llm import LLMUnavailable
+from .prompts import FILTER_SYSTEM as _FILTER_SYSTEM
 from .retrieval import tokenize
 
 log = logging.getLogger("unicorn_rag.connectors")
@@ -324,35 +325,6 @@ _FILTER_SCHEMA = {
     "additionalProperties": False,
 }
 
-_FILTER_SYSTEM = """You screen media candidates for an academic research \
-corpus about a specific startup founder. Every candidate you approve will be \
-transcribed and mined for facts about that founder's entrepreneurial journey, \
-so a wrong approval injects another person's biography into their record.
-
-Mark a candidate RELEVANT when the named founder is a speaker in it, or is \
-discussed substantively in it: interviews, fireside chats, keynotes, panels, \
-podcast episodes, documentary segments, and company profiles that centre on \
-them or the company they built.
-
-Mark it NOT relevant when:
-- the match is only a name collision with a different person — this is the \
-most damaging error, so weigh the country, industry and company signals, not \
-the name alone;
-- the founder is a passing mention in a roundup, listicle, or news bulletin \
-about something else;
-- it is commentary, reaction, or AI-generated content about the founder rather \
-than the founder's own account;
-- the company is named but the founder is neither present nor the subject.
-
-Judge from the title, channel and description only — you cannot watch the \
-video. Titles are often incomplete, so use the description to decide: a \
-generic title on a channel that clearly interviews founders, with a \
-description naming the person, is relevant. When the evidence genuinely does \
-not let you tell, mark it NOT relevant; a missed source costs far less than a \
-contaminated corpus.
-
-Give a specific reason per candidate — name the signal you used ("description \
-names him as Moove co-founder", "different Ladi Delano, a musician")."""
 
 _INTERVIEW_WORDS = (
     "interview", "podcast", "fireside", "keynote", "panel", "conversation",

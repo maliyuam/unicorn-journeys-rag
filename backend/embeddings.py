@@ -21,6 +21,14 @@ class BaseEmbedder:
     name = "base"
     fixed_dim = True  # False for corpus-fitted embedders (TF-IDF)
 
+    # Floor for the grounding gate (backend/grounding.py). This lives on the
+    # embedder because cosine similarity has no shared scale across embedding
+    # spaces: BGE squeezes unrelated text into ~0.5-0.7, while TF-IDF puts it
+    # near 0. A single global constant refuses everything under one backend or
+    # nothing under the other. Override per backend, and recalibrate with
+    # scripts/measure_abstention.py after changing embedder.
+    abstain_min_similarity = 0.64
+
     def fit_corpus(self, texts: list[str]) -> None:  # optional
         pass
 
@@ -38,6 +46,16 @@ class BaseEmbedder:
 
 
 class TfidfEmbedder(BaseEmbedder):
+    # Measured on the sample corpus (15 answerable / 14 unanswerable): TF-IDF
+    # cosine does not separate them at all — answerable ran 0.083-0.270 with a
+    # median of 0.149, unanswerable 0.073-0.264 with a median of 0.160, i.e.
+    # the unanswerable median was HIGHER. Shared common words dominate the
+    # score. A floor here would refuse real questions while letting others
+    # through, so the similarity test is disabled for TF-IDF and the gate
+    # relies on word coverage and the cross-encoder instead. Abstention is
+    # meaningfully weaker on this backend: it leaked 4 of 14 in that run.
+    abstain_min_similarity = 0.0
+
     """Corpus-fitted TF-IDF vectors. Zero external dependencies beyond sklearn.
 
     The whole index is re-fit on every ingest, which is cheap at this scale
@@ -180,3 +198,5 @@ def build_embedder() -> BaseEmbedder:
             "default (BAAI/bge-small-en-v1.5). Check the warnings above."
         )
     return TfidfEmbedder()
+
+

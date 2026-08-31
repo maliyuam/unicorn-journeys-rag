@@ -261,7 +261,8 @@
       <h2>Answer</h2>
       <div class="chips" id="ask-subqueries"></div>
       <div class="md" id="ask-answer"></div>
-      <h2 style="margin-top:20px">Retrieved passages</h2>
+      <div class="note" id="ask-abstained" style="display:none;margin-top:12px;padding:10px 12px;border-left:3px solid var(--bad);background:#2b1416"></div>
+      <h2 style="margin-top:20px" id="ask-passages-heading">Retrieved passages</h2>
       <div id="ask-chunks"></div>
     </div>
   </section>
@@ -629,6 +630,19 @@ $("btn-ask").onclick = async () => {
     $("ask-answer").innerHTML = renderMd(r.answer);
     attachCiteTooltips($("ask-answer"), r.citations);
     renderChunks($("ask-chunks"), r.chunks, r.citations);
+    // An abstention must not look like a broken query. Say plainly that the
+    // corpus does not cover this, and hide the "Retrieved passages" heading —
+    // there are deliberately none, because showing them is how an unsupported
+    // answer ends up with sources next to it anyway.
+    const abstained = !!r.abstained;
+    $("ask-passages-heading").style.display = abstained ? "none" : "";
+    $("ask-abstained").style.display = abstained ? "block" : "none";
+    if (abstained) {
+      $("ask-abstained").innerHTML =
+        `<b>No answer offered.</b> ${esc((r.support && r.support.reason) || "")}` +
+        `<div class="note" style="margin-top:6px">Checked by: ${esc((r.support && r.support.method) || "?")}` +
+        ` · nothing was cited because nothing supported an answer.</div>`;
+    }
   } catch (e) { flash("flash-ask", e.message, false); }
   busy("spin-ask", $("btn-ask"), false);
 };

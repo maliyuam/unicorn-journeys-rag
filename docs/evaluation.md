@@ -123,19 +123,36 @@ hit@k by a single question, run it again before believing it.
 Read these before quoting any number from it. They are limits of the design,
 not bugs, and each one bounds a claim you might otherwise make.
 
-**1. There are no unanswerable questions, so refusal is never measured.**
-Every golden is answerable by construction — the evidence was read out of the
-corpus before the question was written. Nothing in the set asks something the
-corpus cannot support, so the harness is structurally unable to detect the
-pipeline's most dangerous failure: answering confidently anyway.
+**1. Refusal is now measured, but only against 14 questions.**
+This used to read "refusal is never measured", because every golden was
+answerable by construction and the pipeline had no abstention path at all —
+asked about a person absent from the corpus, it returned the top-k passages
+as an answer with `[S1]` citations that lent it unearned authority.
 
-The system currently has no abstention path. Asked about a person who is not
-in the corpus at all, it returns the top-k passages and presents them as an
-answer, with `[S1]` citations that lend the result unearned authority. It only
-declines when the index is completely empty. Before using generated narratives
-as evidence about a real person, add negative controls to the golden set and
-treat "the system produced a narrative" as no indication that it had anything
-to go on.
+Both halves are fixed. `data/eval/goldens.samples.json` now carries
+`negative_controls`, and every run reports:
+
+```
+ABSTENTION (questions the corpus cannot answer)
+  refused correctly    14/14
+  false answer rate    0.000
+```
+
+`false_answer_rate` is the number to watch: the fraction of unanswerable
+questions that came back with an answer and citations. The gate itself is
+`backend/grounding.py`.
+
+What this still does not tell you: 14 questions on a fictional corpus is a
+smoke test, not a measurement of refusal quality. Write negative controls for
+your own corpus — questions it plausibly *should* answer but cannot — and
+re-run. `scripts/measure_abstention.py` reports the signal distributions and
+suggests thresholds from your data.
+
+And note the offline gate is materially weaker than the LLM one. On the
+default embedder it refused 14/14; under the TF-IDF fallback it refused 7/14,
+because TF-IDF cosine does not separate answerable from unanswerable at all
+(the two distributions overlap, with the unanswerable median *higher*). If
+abstention matters to you, do not run TF-IDF.
 
 **2. Retrieval is scored with the founder filter applied.** `evaluate_retrieval`
 passes `founder=` to `hybrid_search`, so each question is answered against one
@@ -158,12 +175,19 @@ measured. LLM judges are known to favour their own generations. Treat these as
 internal consistency checks, not independent evaluation. The refinement loop
 compounds it: it keeps whichever draft the same judge prefers.
 
-**5. Results are not reproducible from this repository alone.** Dependencies
-are unpinned (`>=`), so a `fastembed` or model release silently changes
-retrieval; and `goldens.json` is labelled against collected media that is not
-shipped, so nobody else can reproduce the headline numbers. If you intend to
-publish a result, pin the full environment (a lock file and an explicit model
-revision) and archive the corpus separately with its own provenance.
+**5. The environment is pinned; the corpus still is not.** Dependencies are
+now exact (`==`) in `requirements.txt` and `requirements-dev.txt`, so a library
+release cannot silently move your numbers. Model *names* are pinned in
+`backend/config.py` — but a name is not a revision, so an upstream reupload of
+`BAAI/bge-small-en-v1.5` would still change retrieval. Pin the revision if you
+are publishing.
+
+The corpus remains the real gap: `goldens.json` is labelled against collected
+media that is not shipped, so nobody else can reproduce those headline numbers.
+The sample corpus and `goldens.samples.json` *are* fully reproducible, which is
+what makes them useful for CI and for checking a change did what you think.
+Archive your own corpus separately, with its own provenance, if you intend to
+publish a result from it.
 
 One thing that was checked and is *not* a problem: the golden questions do not
 leak their evidence's vocabulary into the query. Mean content-token overlap

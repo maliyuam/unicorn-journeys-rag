@@ -100,6 +100,37 @@ MIN_TEXT_CHARS = int(os.getenv("MIN_TEXT_CHARS", "40"))
 MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "2000000"))
 MAX_BATCH_DOCS = int(os.getenv("MAX_BATCH_DOCS", "200"))
 
+# --- Grounding gate (abstention) --------------------------------------------
+# Retrieval always returns its best k chunks — "best" is a ranking, not a
+# judgement that anything answers the question. Without a gate the pipeline
+# answers questions the corpus knows nothing about and attaches [S1] citations
+# to whatever it retrieved, which reads as evidence. This gate decides whether
+# to answer at all.
+ABSTAIN_ENABLED = os.getenv("ABSTAIN_ENABLED", "1") not in ("0", "false", "False")
+
+# With credentials the gate is an LLM groundedness check, which generalises.
+# Offline it falls back to the thresholds below, combined as:
+#     answer if similarity >= MIN_SIMILARITY
+#          and (coverage >= MIN_COVERAGE or rerank >= MIN_RERANK)
+#
+# CALIBRATION, AND ITS LIMITS: these were fitted on 15 answerable and 14
+# unanswerable questions against the fictional sample corpus, where they
+# separate perfectly. That is 29 points and three thresholds — the fit is
+# tighter than the evidence. Treat them as a floor that catches blatant cases,
+# not a solved problem, and re-measure on your own corpus with
+# scripts/measure_abstention.py. Similarity scale is embedder-specific: BGE
+# compresses unrelated text into ~0.5-0.7, TF-IDF puts it near 0.
+# Unset by default: the similarity floor has no meaning independent of the
+# embedding space, so its default lives on the embedder class
+# (`BaseEmbedder.abstain_min_similarity`) — 0.64 for BGE, and 0.0 for TF-IDF,
+# where the two distributions were measured to overlap completely. Setting this
+# env var overrides whichever embedder is in use, so set it only after running
+# scripts/measure_abstention.py against your own corpus.
+_min_sim = os.getenv("ABSTAIN_MIN_SIMILARITY")
+ABSTAIN_MIN_SIMILARITY = float(_min_sim) if _min_sim else None
+ABSTAIN_MIN_COVERAGE = float(os.getenv("ABSTAIN_MIN_COVERAGE", "0.35"))
+ABSTAIN_MIN_RERANK = float(os.getenv("ABSTAIN_MIN_RERANK", "-0.7"))
+
 # --- Evaluation / refinement ---
 REFINE_HALLUCINATION_THRESHOLD = float(
     os.getenv("REFINE_HALLUCINATION_THRESHOLD", "0.02")

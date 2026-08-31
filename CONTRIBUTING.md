@@ -11,8 +11,7 @@ say so plainly.
 git clone https://github.com/maliyuam/unicorn-journeys-rag.git
 cd unicorn-journeys-rag
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-pip install pytest ruff
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
 No credentials are required to develop. Without them the app runs in offline
@@ -36,7 +35,7 @@ curl -X POST localhost:8017/api/ingest/samples
 
 ```bash
 ruff check .                # lint (enforced in CI)
-python -m pytest tests/ -q  # 70 tests (enforced in CI)
+python -m pytest tests/ -q  # 96 tests (enforced in CI)
 ```
 
 `ruff format` is **not** enforced. The codebase is hand-formatted for

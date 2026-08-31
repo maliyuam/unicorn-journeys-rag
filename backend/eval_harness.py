@@ -53,6 +53,58 @@ def load_goldens() -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8")).get("goldens", [])
 
 
+def load_negative_controls() -> list[dict]:
+    """Questions the corpus cannot answer. Scored separately from `goldens`.
+
+    They are kept out of the golden list on purpose: they have no evidence, and
+    `validate_goldens` would report every one as a broken label.
+    """
+    path = goldens_path()
+    if not path.exists():
+        return []
+    return json.loads(path.read_text(encoding="utf-8")).get("negative_controls", [])
+
+
+def evaluate_abstention(engine, negatives: list[dict]) -> dict:
+    """Does the pipeline refuse questions the corpus cannot answer?
+
+    This measures the failure that every other metric here is blind to. A
+    retrieval score says how well the best passages rank; it says nothing about
+    whether the system should have answered at all. Precision, recall and
+    faithfulness are all computed over questions that *do* have answers, so a
+    pipeline that answers everything confidently scores identically to one that
+    knows its limits.
+
+    `false_answer_rate` is the number that matters: the fraction of
+    unanswerable questions that came back with an answer and citations.
+    """
+    rows = []
+    for n in negatives:
+        result = engine.ask(n["question"], founder=n.get("founder"))
+        abstained = bool(result.get("abstained"))
+        rows.append(
+            {
+                "id": n["id"],
+                "question": n["question"],
+                "founder": n.get("founder"),
+                "why_unanswerable": n.get("why", ""),
+                "abstained": abstained,
+                "citations_offered": len(result.get("chunks") or []),
+                "method": (result.get("support") or {}).get("method", ""),
+                "reason": (result.get("support") or {}).get("reason", ""),
+            }
+        )
+    total = len(rows) or 1
+    answered = [r for r in rows if not r["abstained"]]
+    return {
+        "total": len(rows),
+        "abstained": len(rows) - len(answered),
+        "false_answers": len(answered),
+        "false_answer_rate": round(len(answered) / total, 3),
+        "rows": rows,
+    }
+
+
 def chunk_is_relevant(chunk_text: str, evidence: list[str]) -> bool:
     """Retrieval ground truth — deliberately strict substring matching.
 
@@ -319,6 +371,14 @@ def run_evaluation(
         "unverifiable_goldens": problems,
         "retrieval": retrieval,
         "generation": generation,
+        # Scored whenever the golden file supplies negative controls. Retrieval
+        # and generation metrics are computed only over answerable questions,
+        # so without this a pipeline that answers everything looks perfect.
+        "abstention": (
+            evaluate_abstention(engine, load_negative_controls())
+            if load_negative_controls()
+            else None
+        ),
     }
     if save:
         RUNS_DIR.mkdir(parents=True, exist_ok=True)
