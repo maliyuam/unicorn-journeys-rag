@@ -55,6 +55,28 @@ class Engine:
                 return  # TF-IDF with no fitted vectorizer: rebuilt on next ingest
             if stored_dim == current_dim:
                 return
+            # A dimension change is normally a deliberate embedder swap. It is
+            # also what a *silent downgrade* looks like — and this heal then
+            # rewrites the entire corpus in the degraded space. That is not a
+            # theoretical risk: a fastembed load failure once left TF-IDF in
+            # place, this branch re-embedded ~2,000 chunks into 20,000-d
+            # vectors, and the resulting 548 MB exhausted an Atlas free tier
+            # and silently disabled $vectorSearch.
+            #
+            # So refuse to heal into a space the store cannot serve. Leaving
+            # the corpus alone costs some retrieval quality until the embedder
+            # is fixed; rewriting it costs the corpus.
+            if current_dim > config.MAX_MONGO_EMBEDDING_DIM and self.store.name.startswith("MongoDB"):
+                log.error(
+                    "NOT re-embedding: current embedder produces %d-d vectors "
+                    "(limit %d for MongoDB) while the corpus is %d-d. This "
+                    "usually means the embedding backend silently fell back to "
+                    "TF-IDF — check the warnings above. The stored corpus is "
+                    "untouched; retrieval will be degraded until the embedder "
+                    "loads correctly.",
+                    current_dim, config.MAX_MONGO_EMBEDDING_DIM, stored_dim,
+                )
+                return
             log.info(
                 "embedding backend changed (%d-d stored vs %d-d current) — re-embedding corpus",
                 stored_dim, current_dim,

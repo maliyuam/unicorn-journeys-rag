@@ -22,6 +22,22 @@ MONGODB_DB = os.getenv("MONGODB_DB", "unicorn_rag")
 MONGODB_COLLECTION = os.getenv("MONGODB_COLLECTION", "chunks")
 MONGODB_VECTOR_INDEX = os.getenv("MONGODB_VECTOR_INDEX", "vector_index")
 
+# Largest embedding dimension MongoDB will accept from this app.
+#
+# This is a data-loss guard, not a tuning knob. TF-IDF produces ~20,000-d
+# vectors that are ~99.5% zeros; stored densely in BSON that is ~289 KB per
+# chunk. A 2,000-chunk corpus becomes 548 MB, which exhausted an Atlas M0
+# (512 MB) and blocked every write on the cluster — and because Atlas
+# $vectorSearch indexes are provisioned for a fixed dimension (384 here), the
+# oversized vectors silently stopped matching the index too, so retrieval fell
+# back to client-side cosine without a word.
+#
+# That happened for real, triggered by an embedder that failed to load and fell
+# back to TF-IDF, after which the startup dimension-heal re-embedded the whole
+# corpus into MongoDB. Atlas' own vector search caps at 4096 dimensions, so
+# anything above this is a bug rather than a configuration.
+MAX_MONGO_EMBEDDING_DIM = int(os.getenv("MAX_MONGO_EMBEDDING_DIM", "4096"))
+
 # --- Embeddings ---
 # "auto": voyage > sentence-transformers > tf-idf, whichever is available.
 EMBEDDING_BACKEND = os.getenv("EMBEDDING_BACKEND", "auto")
