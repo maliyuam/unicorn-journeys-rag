@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unicorn Journeys RAG</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel2: #1c2330; --border: #2d3646;
+    --text: #e6edf3; --muted: #8b949e; --accent: #d4a24e; --accent2: #4ea1d4;
+    --good: #3fb950; --warn: #d29922; --bad: #f85149;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", system-ui, sans-serif; font-size: 15px; line-height: 1.55;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 14px 22px; border-bottom: 1px solid var(--border); background: var(--panel);
+    position: sticky; top: 0; z-index: 5;
+  }
+  header h1 { font-size: 17px; margin: 0; letter-spacing: .3px; }
+  header h1 span { color: var(--accent); }
+  .pill {
+    font-size: 12px; padding: 3px 10px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--panel2); color: var(--muted);
+    white-space: nowrap;
+  }
+  .pill b { color: var(--text); font-weight: 600; }
+  .pill.ok b { color: var(--good); }
+  .pill.off b { color: var(--warn); }
+  nav { display: flex; gap: 4px; margin-left: auto; }
+  nav button {
+    background: none; border: 1px solid transparent; color: var(--muted);
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  }
+  nav button.active { background: var(--panel2); color: var(--text); border-color: var(--border); }
+  nav button:hover { color: var(--text); }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 22px 80px; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 18px;
+  }
+  .card h2 { margin: 0 0 12px; font-size: 15px; color: var(--accent); letter-spacing: .4px; text-transform: uppercase; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  input[type=text], textarea, select {
+    width: 100%; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px;
+    font-size: 14px; font-family: inherit;
+  }
+  textarea { min-height: 160px; resize: vertical; }
+  .field { flex: 1; min-width: 180px; }
+  .field.narrow { flex: 0 0 110px; min-width: 110px; }
+  button.primary {
+    background: var(--accent); color: #14100a; font-weight: 600; border: none;
+    padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  }
+  button.primary:hover { filter: brightness(1.1); }
+  button.primary:disabled { opacity: .5; cursor: wait; }
+  button.ghost {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 9px 16px; border-radius: 8px; cursor: pointer;
+  }
+  button.ghost:hover { color: var(--text); }
+  .stats { display: flex; gap: 26px; flex-wrap: wrap; }
+  .stat .num { font-size: 30px; font-weight: 700; color: var(--accent2); }
+  .stat .lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .chip {
+    font-size: 12px; background: var(--panel2); border: 1px solid var(--border);
+    color: var(--accent2); border-radius: 999px; padding: 3px 11px;
+  }
+  .md { font-size: 15px; }
+  .md h2 { font-size: 16px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin: 20px 0 8px; text-transform: none; letter-spacing: 0; }
+  .md ul { padding-left: 22px; margin: 6px 0; }
+  .md blockquote { border-left: 3px solid var(--warn); margin: 8px 0; padding: 4px 12px; color: var(--muted); font-style: italic; }
+  .cite {
+    display: inline-block; font-size: 11px; background: #23324a; color: var(--accent2);
+    border-radius: 4px; padding: 0 5px; margin: 0 1px; cursor: default;
+    vertical-align: text-top;
+  }
+  .metrics { display: flex; gap: 18px; flex-wrap: wrap; margin: 8px 0 4px; }
+  .metric { flex: 1; min-width: 180px; background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .metric .name { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .metric .val { font-size: 26px; font-weight: 700; margin: 2px 0 6px; }
+  .bar { height: 6px; border-radius: 4px; background: #10151d; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 4px; }
+  .themebars { margin-top: 8px; }
+  .themebar { display: flex; align-items: center; gap: 10px; margin: 5px 0; font-size: 13px; }
+  .themebar .tname { flex: 0 0 220px; color: var(--muted); }
+  .themebar .bar { flex: 1; }
+  .themebar .tval { flex: 0 0 40px; text-align: right; }
+  details.chunk {
+    border: 1px solid var(--border); border-radius: 8px; margin: 8px 0;
+    background: var(--panel2); overflow: hidden;
+  }
+  details.chunk summary {
+    padding: 9px 14px; cursor: pointer; font-size: 13px; color: var(--muted);
+    display: flex; gap: 10px; align-items: center; list-style: none;
+  }
+  details.chunk summary::-webkit-details-marker { display: none; }
+  details.chunk summary .tag { color: var(--accent2); font-weight: 700; }
+  details.chunk summary .score { margin-left: auto; color: var(--accent); font-size: 12px; }
+  details.chunk .body { padding: 4px 16px 14px; font-size: 14px; color: var(--text); }
+  .note { color: var(--muted); font-size: 13px; }
+  .flash { padding: 10px 14px; border-radius: 8px; margin: 10px 0; font-size: 14px; display: none; }
+  .flash.show { display: block; }
+  .flash.good { background: #12261a; border: 1px solid #1f5130; color: var(--good); }
+  .flash.bad { background: #2b1416; border: 1px solid #6b2126; color: var(--bad); }
+  .spinner { display: none; margin-left: 10px; color: var(--muted); font-size: 13px; }
+  .spinner.show { display: inline; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+  .badge.refined { background: #12261a; color: var(--good); border: 1px solid #1f5130; }
+  .steps { display: flex; flex-direction: column; gap: 14px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; }
+  .stepno {
+    flex: 0 0 28px; height: 28px; border-radius: 50%;
+    background: var(--panel2); border: 1px solid var(--border); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+  }
+  .step b { color: var(--text); }
+  #tab-how p { margin: 8px 0; }
+  #tab-how ul { padding-left: 20px; margin: 6px 0; }
+  #tab-how li { margin: 6px 0; }
+  #tab-how code {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px; font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🦄 Unicorn Journeys <span>RAG</span> <small style="color:var(--muted);font-weight:400">v2</small></h1>
+  <span class="pill" id="pill-llm">LLM: <b>…</b></span>
+  <span class="pill" id="pill-emb">Embeddings: <b>…</b></span>
+  <span class="pill" id="pill-rerank">Reranker: <b>…</b></span>
+  <span class="pill" id="pill-store">Store: <b>…</b></span>
+  <nav>
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="ask">Ask</button>
+    <button data-tab="narrative">Narratives</button>
+    <button data-tab="ingest">Ingest</button>
+    <button data-tab="evaluate">Evaluate</button>
+    <button data-tab="how">How it works</button>
+  </nav>
+</header>
+<main>
+
+  <!-- DASHBOARD -->
+  <section class="tab active" id="tab-dashboard">
+    <div class="card">
+      <h2>Corpus</h2>
+      <div class="stats">
+        <div class="stat"><div class="num" id="stat-chunks">0</div><div class="lbl">Chunks</div></div>
+        <div class="stat"><div class="num" id="stat-founders">0</div><div class="lbl">Founders</div></div>
+        <div class="stat"><div class="num" id="stat-sources">0</div><div class="lbl">Sources</div></div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="primary" id="btn-samples">Load sample corpus</button>
+        <button class="ghost" id="btn-clear">Clear index</button>
+        <span class="spinner" id="spin-dash">working…</span>
+      </div>
+      <div class="flash" id="flash-dash"></div>
+    </div>
+    <div class="card">
+      <h2>Founders indexed</h2>
+      <table id="founder-table"><thead><tr><th>Founder</th><th>Chunks</th></tr></thead><tbody></tbody></table>
+      <p class="note" id="empty-note">Index is empty. Click <b>Load sample corpus</b> above for four short fictional interviews to try Ask and Narratives on, or go to the <b>Ingest</b> tab to sweep the founder roster, discover a single founder's media, or upload report files.</p>
+    </div>
+    <div class="card">
+      <h2>Pipeline</h2>
+      <p class="note">Transcripts → sentence-aware chunking → embeddings → <b>vector store</b> (MongoDB Atlas Vector Search or local index) → multi-query expansion → <b>hybrid retrieval</b> (dense + BM25, reciprocal-rank fusion) → grounded generation with inline citations → <b>LLM-judge evaluation</b> (faithfulness · hallucination rate · Context Completeness Score) → automatic refinement of unsupported claims.</p>
+    </div>
+  </section>
+
+  <!-- DISCOVER -->
+  <section class="tab" id="tab-discover">
+    <div class="card">
+      <h2>Sweep the founder roster</h2>
+      <p class="note">Runs discovery → relevance filter → transcript fetch → ingest for every founder in <code>data/founders.json</code> (the paper's sixteen). Only filter-approved candidates are fetched, capped per founder; everything lands in the sources table below for review.</p>
+      <div class="row">
+        <div class="field narrow"><label>Max videos / founder</label><input type="text" id="sw-max" value="50"></div>
+        <div class="field narrow"><label>Search depth</label><input type="text" id="sw-depth" value="50"></div>
+        <div><button class="primary" id="btn-sweep">Sweep all founders</button></div>
+        <div class="jobwrap" id="sw-job" style="display:none;flex:1;min-width:240px">
+          <div class="bar" style="height:8px"><i id="sw-job-bar" style="background:var(--accent);width:0%"></i></div>
+          <div class="note" id="sw-job-msg" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="note" id="sw-access" style="margin-top:10px">
+        <button class="ghost" id="btn-access" style="padding:3px 10px;font-size:12px">Check transcript access</button>
+        <span id="sw-access-msg" style="margin-left:8px"></span>
+      </div>
+      <div class="flash" id="flash-sweep"></div>
+      <table id="sweep-table" style="display:none;margin-top:14px"><thead><tr><th>Founder</th><th>Company</th><th>Found</th><th>Approved</th><th>Ingested</th><th>Failed</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Discover founder media</h2>
+      <p class="note">Searches YouTube (or a podcast RSS feed) for appearances by a founder, filters candidates for relevance, and presents them for <b>your review</b> — nothing is ingested until you approve it. Transcripts come from captions when available, or local ASR (<code>faster-whisper</code>) when installed.</p>
+      <div class="row">
+        <div class="field"><label>Founder</label><input type="text" id="dis-founder" placeholder="e.g. Olugbenga Agboola"></div>
+        <div class="field"><label>Company</label><input type="text" id="dis-company" placeholder="e.g. Flutterwave"></div>
+        <div class="field narrow"><label>Source</label>
+          <select id="dis-mode"><option value="youtube">YouTube</option><option value="rss">Podcast RSS</option></select></div>
+        <div class="field narrow"><label>Max results</label><input type="text" id="dis-max" value="12"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="field" id="dis-query-wrap"><label>Search query (optional — defaults to founder + interview keywords)</label>
+          <input type="text" id="dis-query" placeholder="custom YouTube query"></div>
+        <div class="field" id="dis-feed-wrap" style="display:none"><label>RSS feed URL</label>
+          <input type="text" id="dis-feed" placeholder="https://feeds.example.com/podcast.xml"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="btn-discover">Search</button>
+        <div class="jobwrap" id="dis-job" style="display:none;flex:1;min-width:220px">
+          <div class="bar" style="height:8px"><i id="dis-job-bar" style="background:var(--accent2);width:0%"></i></div>
+          <div class="note" id="dis-job-msg" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="flash" id="flash-discover"></div>
+    </div>
+    <div class="card" id="dis-results" style="display:none">
+      <h2>Candidates — review &amp; approve</h2>
+      <p class="note" id="dis-filter-note"></p>
+      <table id="dis-table"><thead><tr><th></th><th>Title</th><th>Channel</th><th>Relevance</th><th>Status</th></tr></thead><tbody></tbody></table>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="btn-dis-ingest">Fetch &amp; ingest selected</button>
+        <button class="ghost" id="btn-dis-all">Toggle all</button>
+        <div class="jobwrap" id="dis-ing-job" style="display:none;flex:1;min-width:220px">
+          <div class="bar" style="height:8px"><i id="dis-ing-bar" style="background:var(--accent);width:0%"></i></div>
+          <div class="note" id="dis-ing-msg" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="flash" id="flash-dis-ingest"></div>
+    </div>
+  </section>
+
+  <!-- ASK -->
+  <section class="tab" id="tab-ask">
+    <div class="card">
+      <h2>Ask the corpus</h2>
+      <div class="row">
+        <div class="field"><label>Question</label>
+          <input type="text" id="ask-q" placeholder="e.g. How did TymeBank reach profitability?"></div>
+        <div class="field narrow"><label>Founder filter</label><select id="ask-founder"><option value="">All</option></select></div>
+        <div class="field narrow"><label>Top-k</label><input type="text" id="ask-k" value="7"></div>
+        <div><button class="primary" id="btn-ask">Ask</button><span class="spinner" id="spin-ask">retrieving…</span></div>
+      </div>
+      <div class="flash" id="flash-ask"></div>
+    </div>
+    <div class="card" id="ask-result" style="display:none">
+      <h2>Answer</h2>
+      <div class="chips" id="ask-subqueries"></div>
+      <div class="md" id="ask-answer"></div>
+      <h2 style="margin-top:20px">Retrieved passages</h2>
+      <div id="ask-chunks"></div>
+    </div>
+  </section>
+
+  <!-- NARRATIVE -->
+  <section class="tab" id="tab-narrative">
+    <div class="card">
+      <h2>Founder narrative pipeline</h2>
+      <div class="row">
+        <div class="field"><label>Founder</label><select id="nar-founder"></select></div>
+        <div class="field narrow"><label>Top-k</label><input type="text" id="nar-k" value="8"></div>
+        <div><button class="primary" id="btn-nar">Generate narrative</button><span class="spinner" id="spin-nar">running full pipeline (expand → retrieve → generate → judge → refine)…</span></div>
+      </div>
+      <div class="flash" id="flash-nar"></div>
+    </div>
+    <div id="nar-result" style="display:none">
+      <div class="card">
+        <h2>Evaluation <span id="nar-refined"></span></h2>
+        <div class="metrics">
+          <div class="metric"><div class="name">Faithfulness</div><div class="val" id="m-faith">–</div><div class="bar"><i id="b-faith"></i></div></div>
+          <div class="metric"><div class="name">Hallucination rate</div><div class="val" id="m-hall">–</div><div class="bar"><i id="b-hall"></i></div></div>
+          <div class="metric"><div class="name">Context Completeness</div><div class="val" id="m-ccs">–</div><div class="bar"><i id="b-ccs"></i></div></div>
+        </div>
+        <div class="themebars" id="nar-themes"></div>
+        <p class="note" id="nar-judge-note"></p>
+      </div>
+      <div class="card">
+        <h2>Narrative <button class="ghost" id="btn-nar-export" style="float:right;padding:4px 12px;font-size:12px">Download .md</button></h2>
+        <div class="chips" id="nar-subqueries"></div>
+        <div class="md" id="nar-text"></div>
+      </div>
+      <div class="card">
+        <h2>Sources used</h2>
+        <div id="nar-chunks"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="tab" id="tab-how">
+    <div class="card">
+      <h2>What this is</h2>
+      <p>This system reconstructs the entrepreneurial journeys of African unicorn founders from scattered public media — YouTube interviews, keynotes, panels and podcasts — and turns them into structured, source-cited narratives.</p>
+      <p class="note">It is a rebuild of the method in <i>“Generative AI Methodology for Uncovering Entrepreneurial Journeys in Africa”</i> (Esibe, Aliyu, Thornburg, Barros &amp; Stam), upgraded at every stage and wrapped in this interface. The research problem it addresses: data on African entrepreneurship is fragmented and largely unstructured, so the evidence exists but cannot be studied at scale by hand.</p>
+    </div>
+
+    <div class="card">
+      <h2>The pipeline</h2>
+      <div class="steps">
+        <div class="step"><div class="stepno">1</div><div>
+          <b>Discover</b> — Search YouTube and podcast RSS for a founder's appearances. Non-API routes are tried first (yt-dlp keyless search, then Invidious mirrors); the official YouTube Data API is an optional booster, never a requirement.
+        </div></div>
+        <div class="step"><div class="stepno">2</div><div>
+          <b>Filter for relevance</b> — Every candidate is judged against the founder: is it really them speaking or being discussed, or a name collision? Claude does this with a structured verdict and a stated reason; without credentials a keyword heuristic stands in.
+        </div></div>
+        <div class="step"><div class="stepno">3</div><div>
+          <b>You approve</b> — Nothing is fetched until a human says so. Candidates arrive pre-checked with their relevance reasons; you uncheck what does not belong. A full-roster sweep automates the approval using the same filter, and everything it collects stays reviewable and deletable in the sources table.
+        </div></div>
+        <div class="step"><div class="stepno">4</div><div>
+          <b>Fetch transcripts</b> — Five keyless strategies in order: the transcript API, yt-dlp captions via web then Android/iOS players, Invidious, Piped, and finally local Whisper ASR that reads the audio directly. Each item succeeds or fails on its own and reports which route worked.
+        </div></div>
+        <div class="step"><div class="stepno">5</div><div>
+          <b>Chunk and embed</b> — Transcripts are split on sentence boundaries at about 220 words with overlap, with a hard word cap so unpunctuated auto-captions cannot collapse into one giant block. Each chunk is embedded with BGE-small (384-d) and tagged with founder, company, source and type.
+        </div></div>
+        <div class="step"><div class="stepno">6</div><div>
+          <b>Store</b> — Chunks and vectors go to MongoDB Atlas, which serves retrieval through native <code>$vectorSearch</code> with a founder pre-filter. If the cluster is unreachable the app falls back to a local index rather than losing work, and syncs back up afterwards.
+        </div></div>
+        <div class="step"><div class="stepno">7</div><div>
+          <b>Retrieve</b> — A question is expanded into several atomic sub-queries. Each runs through both semantic (vector) and keyword (BM25) search, and the rankings are merged with reciprocal-rank fusion. The hybrid matters: exact names, dates and dollar figures are precisely what dense vectors blur. A cross-encoder then re-reads the top candidates alongside the question and its ranking is blended with fusion's, which promotes passages that actually answer the question instead of ones that merely share its topic.
+        </div></div>
+        <div class="step"><div class="stepno">8</div><div>
+          <b>Generate</b> — Claude writes the answer or the six-part founder narrative from the retrieved passages only, citing each statement inline as [S1]. The prompts state explicitly that the sources are machine transcripts with garbled names, no punctuation and unlabelled speakers.
+        </div></div>
+        <div class="step"><div class="stepno">9</div><div>
+          <b>Judge and refine</b> — Each narrative is audited claim by claim for faithfulness and hallucination rate, and scored for Context Completeness across the six journey themes. If the hallucination rate crosses the threshold the narrative is rewritten with the unsupported claims flagged, re-judged, and only kept if it actually improved.
+        </div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>How we know it works</h2>
+      <p>Aggregate scores hide bugs, so the <b>Evaluate</b> tab scores the live pipeline against a golden set of questions whose answers were read out of the ingested transcripts. Relevance is defined by evidence text appearing in a retrieved chunk, which keeps the labels valid when chunking or the embedding model changes.</p>
+      <p class="note">Retrieval and generation are scored separately, so a wrong answer can be blamed on the stage that caused it. Every run saves a baseline and the next run reports the delta. This is what caught a chunking bug that had flattened whole interviews into single chunks, and it is what rejected a retrieval change that looked sensible but measurably made things worse.</p>
+    </div>
+
+    <div class="card">
+      <h2>What it does not do</h2>
+      <ul>
+        <li><b>It does not know anything beyond the transcripts.</b> If the sources never mention a funding round, the narrative says so rather than filling the gap from memory.</li>
+        <li><b>Coverage follows media, not merit.</b> A founder who gives few interviews gets a thin narrative. Low completeness reflects what was documented publicly, not the founder.</li>
+        <li><b>Speech recognition makes mistakes.</b> Names and figures can be garbled, and panel recordings do not label who is speaking, so some attributions carry real uncertainty.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- EVALUATE -->
+  <section class="tab" id="tab-evaluate">
+    <div class="card">
+      <h2>Golden-set evaluation</h2>
+      <p class="note">Scores the live pipeline against <code>data/eval/goldens.json</code> — questions whose answers were read out of the ingested transcripts. Relevance is defined by evidence text appearing in a retrieved chunk, so labels survive re-chunking and embedder swaps. Retrieval and generation are scored separately so a bad answer can be blamed on the stage that caused it.</p>
+      <div class="row">
+        <div><button class="primary" id="btn-eval">Run evaluation</button></div>
+        <div><button class="ghost" id="btn-eval-fast">Retrieval only (fast)</button></div>
+        <div class="jobwrap" id="ev-job" style="display:none;flex:1;min-width:240px">
+          <div class="bar" style="height:8px"><i id="ev-job-bar" style="background:var(--accent2);width:0%"></i></div>
+          <div class="note" id="ev-job-msg" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="flash" id="flash-eval"></div>
+      <p class="note" id="ev-meta" style="margin-top:10px"></p>
+    </div>
+    <div class="card" id="ev-results" style="display:none">
+      <h2>Retrieval sweep</h2>
+      <table id="ev-table"><thead><tr><th>k</th><th>precision</th><th>ceiling</th><th>prec (norm)</th><th>recall</th><th>hit rate</th><th>MRR</th></tr></thead><tbody></tbody></table>
+      <p class="note" id="ev-bestk" style="margin-top:10px"></p>
+      <div class="metrics" id="ev-gen" style="margin-top:14px"></div>
+      <h2 style="margin-top:20px">Error analysis</h2>
+      <p class="note">Questions whose evidence never reached the context. These are the next thing to fix — read them, don't just count them.</p>
+      <div id="ev-misses"></div>
+    </div>
+  </section>
+
+  <!-- INGEST -->
+  <section class="tab" id="tab-ingest">
+    <div class="card">
+      <h2>Upload transcript files</h2>
+      <p class="note">Accepts <b>.txt</b>, <b>.md</b>, <b>.json</b>, <b>.srt</b>, <b>.vtt</b> (YouTube caption exports are cleaned automatically). JSON files may embed their own <code>founder</code>/<code>company</code>/<code>source_title</code>; the fields below are defaults for files that don't. Re-uploading an unchanged file is skipped; a changed file replaces its previous chunks.</p>
+      <div class="row">
+        <div class="field"><label>Files</label>
+          <input type="file" id="up-files" multiple accept=".txt,.md,.json,.srt,.vtt"></div>
+        <div class="field"><label>Default founder</label><input type="text" id="up-founder" placeholder="required unless files embed it"></div>
+        <div class="field"><label>Default company</label><input type="text" id="up-company"></div>
+        <div class="field narrow"><label>Default type</label>
+          <select id="up-type"><option>youtube</option><option>podcast</option><option>report</option><option selected>other</option></select></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="btn-upload">Upload &amp; index</button>
+        <div class="jobwrap" id="up-job" style="display:none;flex:1;min-width:220px">
+          <div class="bar" style="height:8px"><i id="up-job-bar" style="background:var(--accent2);width:0%"></i></div>
+          <div class="note" id="up-job-msg" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="flash" id="flash-upload"></div>
+    </div>
+    <div class="card">
+      <h2>Attribution audit</h2>
+      <p class="note">Has the LLM read each stored transcript and judge whether the founder it was filed under actually appears in it. This is the check that string matching cannot do: the corpus contains “Tosi and La” for Tosin Eniolorunda and “Helen” for Halan, and companies rename (Moniepoint was TeamApt). Filing one person's interview under another founder produces citations that look perfectly legitimate.</p>
+      <div class="row">
+        <div><button class="primary" id="btn-audit">Audit attribution</button></div>
+        <div><button class="ghost" id="btn-audit-remove">Audit &amp; remove mis-attributed</button></div>
+        <div class="jobwrap" id="au-job" style="display:none;flex:1;min-width:240px">
+          <div class="bar" style="height:8px"><i id="au-job-bar" style="background:var(--accent2);width:0%"></i></div>
+          <div class="note" id="au-job-msg" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="flash" id="flash-audit"></div>
+      <div class="metrics" id="au-counts" style="margin-top:12px"></div>
+      <div id="au-results" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h2>Ingested sources</h2>
+      <table id="source-table"><thead><tr><th>Source</th><th>Founder</th><th>Type</th><th>Chunks</th><th>Ingested</th><th></th></tr></thead><tbody></tbody></table>
+      <p class="note" id="source-empty">No sources ingested yet.</p>
+    </div>
+    <div class="card">
+      <h2>Paste a transcript</h2>
+      <div class="row">
+        <div class="field"><label>Founder name</label><input type="text" id="in-founder" placeholder="e.g. Olugbenga Agboola"></div>
+        <div class="field"><label>Company</label><input type="text" id="in-company" placeholder="e.g. Flutterwave"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="field"><label>Source title</label><input type="text" id="in-title" placeholder="e.g. Interview at Africa Fintech Summit 2024"></div>
+        <div class="field narrow"><label>Source type</label>
+          <select id="in-type"><option>youtube</option><option>podcast</option><option>report</option><option selected>other</option></select></div>
+      </div>
+      <div style="margin-top:10px"><label>Transcript text</label>
+        <textarea id="in-text" placeholder="Paste the transcript here…"></textarea></div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="btn-ingest">Ingest</button>
+        <span class="spinner" id="spin-ingest">chunking &amp; embedding…</span>
+      </div>
+      <div class="flash" id="flash-ingest"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const api = async (path, opts) => {
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || res.statusText);
+  return data;
+};
+const post = (path, body) => api(path, {
+  method: "POST", headers: {"Content-Type": "application/json"},
+  body: body ? JSON.stringify(body) : undefined
+});
+
+// --- tabs ---
+document.querySelectorAll("nav button").forEach(btn => btn.onclick = () => {
+  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  btn.classList.add("active");
+  $("tab-" + btn.dataset.tab).classList.add("active");
+  // Discover and manual ingest are one workflow — show them together
+  if (btn.dataset.tab === "ingest") $("tab-discover").classList.add("active");
+});
+
+// --- tiny markdown renderer (headings, bold, italics, lists, quotes, cites) ---
+function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function renderMd(text) {
+  const lines = esc(text || "").split(/\r?\n/);
+  let html = "", inList = false;
+  const close = () => { if (inList) { html += "</ul>"; inList = false; } };
+  for (const line of lines) {
+    if (/^\s*[-*•]\s+/.test(line)) {
+      if (!inList) { html += "<ul>"; inList = true; }
+      html += "<li>" + inline(line.replace(/^\s*[-*•]\s+/, "")) + "</li>";
+    } else if (/^##\s+/.test(line)) { close(); html += "<h2>" + inline(line.replace(/^##\s+/, "")) + "</h2>"; }
+    else if (/^#\s+/.test(line)) { close(); html += "<h2>" + inline(line.replace(/^#\s+/, "")) + "</h2>"; }
+    else if (/^>\s?/.test(line)) { close(); html += "<blockquote>" + inline(line.replace(/^>\s?/, "")) + "</blockquote>"; }
+    else if (line.trim() === "") { close(); }
+    else { close(); html += "<p>" + inline(line) + "</p>"; }
+  }
+  close();
+  return html;
+}
+function inline(s) {
+  return s
+    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/_(.+?)_/g, "<i>$1</i>")
+    .replace(/\[(S\d+)\]/g, '<span class="cite" data-tag="$1">$1</span>');
+}
+function attachCiteTooltips(container, citations) {
+  const map = {};
+  (citations || []).forEach(c => map[c.tag] = `${c.source_title} (${c.source_type})`);
+  container.querySelectorAll(".cite").forEach(el => {
+    const info = map[el.dataset.tag];
+    if (info) el.title = info;
+  });
+}
+function renderChunks(container, chunks, citations) {
+  container.innerHTML = "";
+  (chunks || []).forEach((c, i) => {
+    const d = document.createElement("details");
+    d.className = "chunk";
+    d.innerHTML = `<summary><span class="tag">S${i+1}</span>
+      <span>${esc(c.source_title)}</span>
+      <span class="pill">${esc(c.source_type)}</span>
+      <span class="score">fusion ${c.fusion_score ?? ""}</span></summary>
+      <div class="body">${esc(c.text)}</div>`;
+    container.appendChild(d);
+  });
+}
+function flash(id, msg, good) {
+  const el = $(id);
+  el.textContent = msg;
+  el.className = "flash show " + (good ? "good" : "bad");
+  setTimeout(() => el.classList.remove("show"), 6000);
+}
+function busy(spinId, btn, on) {
+  $(spinId).classList.toggle("show", on);
+  if (btn) btn.disabled = on;
+}
+
+// --- status / dashboard ---
+async function refreshStatus() {
+  try {
+    const s = await api("/api/status");
+    const llmPill = $("pill-llm");
+    llmPill.innerHTML = "LLM: <b>" + esc(s.llm.mode === "claude" ? s.llm.label : "offline fallback") + "</b>";
+    llmPill.className = "pill " + (s.llm.mode === "claude" ? "ok" : "off");
+    llmPill.title = s.llm.label;
+    $("pill-emb").innerHTML = "Embeddings: <b>" + esc(s.embedder) + "</b>";
+    if (s.reranker) {
+      const rp = $("pill-rerank");
+      rp.innerHTML = "Reranker: <b>" + esc(s.reranker.replace(/^.*\//, "")) + "</b>";
+      rp.title = s.reranker;
+    }
+    $("pill-store").innerHTML = "Store: <b>" + esc(s.store) + "</b>";
+    $("stat-chunks").textContent = s.corpus.chunks;
+    $("stat-founders").textContent = Object.keys(s.corpus.founders).length;
+    $("stat-sources").textContent = s.corpus.sources;
+    const tbody = $("founder-table").querySelector("tbody");
+    tbody.innerHTML = "";
+    const names = Object.keys(s.corpus.founders).sort();
+    names.forEach(n => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${esc(n)}</td><td>${s.corpus.founders[n]}</td>`;
+      tbody.appendChild(tr);
+    });
+    $("empty-note").style.display = names.length ? "none" : "block";
+    // founder selects
+    const askSel = $("ask-founder"), narSel = $("nar-founder");
+    askSel.innerHTML = '<option value="">All</option>';
+    narSel.innerHTML = "";
+    names.forEach(n => {
+      askSel.insertAdjacentHTML("beforeend", `<option>${esc(n)}</option>`);
+      narSel.insertAdjacentHTML("beforeend", `<option>${esc(n)}</option>`);
+    });
+  } catch (e) { console.error(e); }
+}
+
+$("btn-samples").onclick = async () => {
+  // A research corpus is live media only. Adding four fictional founders to a
+  // corpus that already holds real sources is almost never what someone wants,
+  // so make it a deliberate choice rather than a one-click accident.
+  const existing = Number($("stat-sources").textContent) || 0;
+  if (existing > 0 && !confirm(
+      `Your corpus already holds ${existing} source(s).\n\n` +
+      "The sample corpus adds 4 FICTIONAL founders alongside them. They are " +
+      "separate people, so real founders' narratives are unaffected, and you " +
+      "can delete them again from the sources table.\n\nLoad them anyway?")) {
+    return;
+  }
+  busy("spin-dash", $("btn-samples"), true);
+  try {
+    const r = await post("/api/ingest/samples");
+    await refreshStatus();
+    const added = r.ingested ?? 0, same = r.skipped_unchanged ?? 0;
+    flash("flash-dash", added
+      ? `Loaded ${added} fictional sample transcript(s) — corpus now holds ${r.chunks ?? 0} chunks. Try the Ask tab.`
+      : `Sample corpus already indexed (${same} source(s) unchanged).`, true);
+  } catch (e) { flash("flash-dash", e.message, false); }
+  busy("spin-dash", $("btn-samples"), false);
+};
+
+$("btn-clear").onclick = async () => {
+  if (!confirm("Clear the entire index?")) return;
+  busy("spin-dash", null, true);
+  try { await post("/api/clear"); await refreshStatus(); flash("flash-dash", "Index cleared.", true); }
+  catch (e) { flash("flash-dash", e.message, false); }
+  busy("spin-dash", null, false);
+};
+
+// --- ask ---
+$("btn-ask").onclick = async () => {
+  const q = $("ask-q").value.trim();
+  if (!q) return flash("flash-ask", "Enter a question first.", false);
+  busy("spin-ask", $("btn-ask"), true);
+  try {
+    const r = await post("/api/ask", {
+      question: q,
+      founder: $("ask-founder").value || null,
+      k: parseInt($("ask-k").value) || 7,
+    });
+    $("ask-result").style.display = "block";
+    $("ask-subqueries").innerHTML = r.subqueries.map(s => `<span class="chip">${esc(s)}</span>`).join("");
+    $("ask-answer").innerHTML = renderMd(r.answer);
+    attachCiteTooltips($("ask-answer"), r.citations);
+    renderChunks($("ask-chunks"), r.chunks, r.citations);
+  } catch (e) { flash("flash-ask", e.message, false); }
+  busy("spin-ask", $("btn-ask"), false);
+};
+$("ask-q").addEventListener("keydown", e => { if (e.key === "Enter") $("btn-ask").click(); });
+
+// --- narrative ---
+const THEME_LABELS = {
+  founder_name_company: "Founder & company",
+  timeline_critical_events: "Timeline of critical events",
+  key_success_markers: "Key success markers",
+  ecosystem_influences: "Ecosystem influences",
+  challenges_resilience: "Challenges & resilience",
+  impact_ecosystem: "Impact on the ecosystem",
+};
+function scoreColor(v, invert) {
+  const x = invert ? 1 - v : v;
+  return x >= 0.8 ? "var(--good)" : x >= 0.5 ? "var(--warn)" : "var(--bad)";
+}
+$("btn-nar").onclick = async () => {
+  const founder = $("nar-founder").value;
+  if (!founder) return flash("flash-nar", "Ingest a corpus first — no founders indexed.", false);
+  busy("spin-nar", $("btn-nar"), true);
+  $("nar-result").style.display = "none";
+  try {
+    const r = await post("/api/narrative", { founder, k: parseInt($("nar-k").value) || 8 });
+    lastNarrative = r;
+    $("nar-result").style.display = "block";
+    $("nar-refined").innerHTML = r.refined ? '<span class="badge refined">auto-refined ✓</span>' : "";
+    const f = r.faithfulness, ccs = r.ccs;
+    $("m-faith").textContent = f.faithfulness.toFixed(2);
+    $("b-faith").style.width = (f.faithfulness * 100) + "%";
+    $("b-faith").style.background = scoreColor(f.faithfulness);
+    $("m-hall").textContent = f.hallucination_rate.toFixed(2);
+    $("b-hall").style.width = Math.max(2, f.hallucination_rate * 100) + "%";
+    $("b-hall").style.background = scoreColor(f.hallucination_rate, true);
+    $("m-ccs").textContent = ccs.ccs.toFixed(2);
+    $("b-ccs").style.width = (ccs.ccs * 100) + "%";
+    $("b-ccs").style.background = scoreColor(ccs.ccs);
+    $("nar-themes").innerHTML = Object.entries(ccs.theme_scores).map(([k, v]) => `
+      <div class="themebar"><div class="tname">${THEME_LABELS[k] || k}</div>
+      <div class="bar"><i style="width:${v*100}%;background:${scoreColor(v)}"></i></div>
+      <div class="tval">${v.toFixed(2)}</div></div>`).join("");
+    $("nar-judge-note").textContent =
+      `Judge: ${f.engine} · ${f.supported_claims}/${f.total_claims} claims supported · ${ccs.summary || ""}`;
+    $("nar-subqueries").innerHTML = r.subqueries.map(s => `<span class="chip">${esc(s)}</span>`).join("");
+    $("nar-text").innerHTML = renderMd(r.narrative);
+    attachCiteTooltips($("nar-text"), r.citations);
+    renderChunks($("nar-chunks"), r.chunks, r.citations);
+  } catch (e) { flash("flash-nar", e.message, false); }
+  busy("spin-nar", $("btn-nar"), false);
+};
+
+// --- evaluate ---
+function renderEval(r) {
+  $("ev-meta").textContent =
+    `${r.corpus.chunks} chunks · ${r.corpus.sources} sources · ${r.corpus.founders} founders · ` +
+    `${r.embedder} · ${r.goldens_scored}/${r.goldens_total} goldens scored · judge: ${r.llm_mode}` +
+    ((r.unverifiable_goldens || []).length
+      ? ` · ⚠ ${r.unverifiable_goldens.length} golden(s) unverifiable against the corpus` : "");
+  const tbody = $("ev-table").querySelector("tbody");
+  tbody.innerHTML = "";
+  const best = r.retrieval.best_k;
+  Object.entries(r.retrieval.per_k).forEach(([k, m]) => {
+    const tr = document.createElement("tr");
+    if (String(k) === String(best)) tr.style.background = "#1b2436";
+    tr.innerHTML = `<td>${k}${String(k) === String(best) ? " ★" : ""}</td>
+      <td>${m.precision.toFixed(3)}</td><td class="note">${m.precision_ceiling.toFixed(3)}</td>
+      <td>${m.precision_normalized.toFixed(3)}</td><td>${m.recall.toFixed(3)}</td>
+      <td style="color:${m.hit_rate >= 0.9 ? "var(--good)" : m.hit_rate >= 0.7 ? "var(--warn)" : "var(--bad)"}">${m.hit_rate.toFixed(3)}</td>
+      <td>${m.mrr.toFixed(3)}</td>`;
+    tbody.appendChild(tr);
+  });
+  $("ev-bestk").innerHTML =
+    `★ best k = <b>${best}</b> — the cheapest k that gets the evidence into context. ` +
+    `Raw precision is capped by how few chunks carry each fact (see ceiling), so it is not the target.`;
+  const g = r.generation;
+  $("ev-gen").innerHTML = !g ? "" : [
+    ["Answer accuracy", g.answer_accuracy, false],
+    ["Context recall", g.context_recall, false],
+    ["Generation loss", g.generation_loss_rate, true],
+    ["Faithfulness", g.faithfulness, false],
+    ["Hallucination rate", g.hallucination_rate, true],
+  ].map(([name, val, invert]) => `
+    <div class="metric"><div class="name">${name}</div>
+      <div class="val">${val.toFixed(3)}</div>
+      <div class="bar"><i style="width:${Math.max(2, val * 100)}%;background:${
+        scoreColor(val, invert)}"></i></div></div>`).join("");
+  const misses = (r.retrieval.details || []).filter(d => d.k === best && !d.hit);
+  $("ev-misses").innerHTML = misses.length
+    ? misses.map(d => `<details class="chunk"><summary>
+        <span class="tag">${esc(d.id)}</span><span>${esc(d.question)}</span>
+        <span class="score">${esc(d.founder || "")}</span></summary>
+        <div class="body">Evidence lives in ${d.relevant_in_corpus} chunk(s) but none were retrieved.
+        Retrieved instead: ${esc((d.top_sources || []).join(" · "))}</div></details>`).join("")
+    : '<p class="note" style="color:var(--good)">No retrieval misses at the best k.</p>';
+  $("ev-results").style.display = "block";
+}
+async function runEval(includeGeneration) {
+  $("btn-eval").disabled = true; $("btn-eval-fast").disabled = true;
+  $("ev-job").style.display = "block";
+  $("ev-job-bar").style.width = "0%";
+  $("ev-job-msg").textContent = "starting…";
+  try {
+    const start = await post("/api/eval", {include_generation: includeGeneration, save: true});
+    const job = await pollJob(start.job_id, j => {
+      $("ev-job-bar").style.width = (j.progress * 100) + "%";
+      $("ev-job-msg").textContent = j.message || j.status;
+    });
+    if (job.status === "error") throw new Error(job.error);
+    renderEval(job.result);
+    flash("flash-eval", `Evaluation complete — best k = ${job.result.retrieval.best_k}.`, true);
+  } catch (e) { flash("flash-eval", e.message, false); }
+  $("btn-eval").disabled = false; $("btn-eval-fast").disabled = false;
+  setTimeout(() => { $("ev-job").style.display = "none"; }, 1500);
+}
+$("btn-eval").onclick = () => runEval(true);
+$("btn-eval-fast").onclick = () => runEval(false);
+(async () => {
+  try { renderEval(await api("/api/eval/latest")); } catch (e) { /* none yet */ }
+})();
+
+// --- sweep ---
+function renderSweep(founders) {
+  const tbody = $("sweep-table").querySelector("tbody");
+  tbody.innerHTML = "";
+  founders.forEach(f => {
+    const failCount = (f.failed || []).length;
+    const tr = document.createElement("tr");
+    const err = f.error ? ` <span class="note">${esc(f.error.slice(0, 60))}</span>` : "";
+    tr.innerHTML = `<td>${esc(f.founder)}${err}</td><td class="note">${esc(f.company)}</td>
+      <td>${f.candidates}</td><td>${f.approved}</td>
+      <td style="color:${f.ingested ? "var(--good)" : "var(--muted)"}">${f.ingested}</td>
+      <td class="note">${failCount || ""}</td>`;
+    tbody.appendChild(tr);
+  });
+  $("sweep-table").style.display = founders.length ? "table" : "none";
+}
+$("btn-access").onclick = async () => {
+  const el = $("sw-access-msg");
+  el.textContent = "checking…";
+  el.style.color = "var(--muted)";
+  try {
+    const a = await api("/api/connectivity");
+    if (a.ok) {
+      el.textContent = `transcripts reachable via ${a.method} (${a.detail})`;
+      el.style.color = "var(--good)";
+    } else {
+      el.textContent = (a.blocked ? "BLOCKED — " : "unavailable — ") + a.hint;
+      el.style.color = a.blocked ? "var(--bad)" : "var(--warn)";
+    }
+  } catch (e) { el.textContent = e.message; el.style.color = "var(--bad)"; }
+};
+$("btn-sweep").onclick = async () => {
+  if (!confirm("Sweep every founder in the roster? This fetches many transcripts and can take several minutes.")) return;
+  $("btn-sweep").disabled = true;
+  $("sw-job").style.display = "block";
+  $("sw-job-bar").style.width = "0%";
+  $("sw-job-msg").textContent = "starting…";
+  try {
+    const start = await post("/api/sweep", {
+      max_candidates: parseInt($("sw-max").value) || 6,
+      search_results: parseInt($("sw-depth").value) || 10,
+    });
+    const job = await pollJob(start.job_id, j => {
+      $("sw-job-bar").style.width = (j.progress * 100) + "%";
+      $("sw-job-msg").textContent = j.message || j.status;
+    });
+    if (job.status === "error") throw new Error(job.error);
+    const r = job.result;
+    renderSweep(r.founders || []);
+    const totalIngested = (r.founders || []).reduce((s, f) => s + f.ingested, 0);
+    flash("flash-sweep",
+      `Sweep complete — ${totalIngested} transcript(s) ingested across ${(r.founders || []).length} founders. Corpus: ${r.chunks} chunks.`,
+      totalIngested > 0);
+    await Promise.all([refreshStatus(), refreshSources()]);
+  } catch (e) { flash("flash-sweep", e.message, false); }
+  $("btn-sweep").disabled = false;
+};
+
+// --- discover ---
+let disCandidates = [];
+let disAsr = false;
+$("dis-mode").onchange = () => {
+  const rss = $("dis-mode").value === "rss";
+  $("dis-query-wrap").style.display = rss ? "none" : "block";
+  $("dis-feed-wrap").style.display = rss ? "block" : "none";
+};
+$("btn-discover").onclick = async () => {
+  const founder = $("dis-founder").value.trim();
+  if (!founder) return flash("flash-discover", "Founder name is required.", false);
+  const mode = $("dis-mode").value;
+  if (mode === "rss" && !$("dis-feed").value.trim())
+    return flash("flash-discover", "RSS feed URL is required.", false);
+  $("btn-discover").disabled = true;
+  $("dis-job").style.display = "block";
+  $("dis-job-bar").style.width = "0%";
+  $("dis-job-msg").textContent = "starting…";
+  $("dis-results").style.display = "none";
+  try {
+    const start = await post("/api/discover", {
+      mode, founder,
+      company: $("dis-company").value.trim(),
+      query: $("dis-query").value.trim(),
+      feed_url: $("dis-feed").value.trim(),
+      max_results: parseInt($("dis-max").value) || 0,
+    });
+    const job = await pollJob(start.job_id, j => {
+      $("dis-job-bar").style.width = (j.progress * 100) + "%";
+      $("dis-job-msg").textContent = j.message || j.status;
+    });
+    if (job.status === "error") throw new Error(job.error);
+    disCandidates = job.result.candidates || [];
+    renderCandidates(job.result);
+    if (!disCandidates.length) flash("flash-discover", "No candidates found for this search.", false);
+  } catch (e) { flash("flash-discover", e.message, false); }
+  $("btn-discover").disabled = false;
+  setTimeout(() => { $("dis-job").style.display = "none"; }, 1200);
+};
+function renderCandidates(result) {
+  if (result && "asr_available" in result) disAsr = result.asr_available;
+  const tbody = $("dis-table").querySelector("tbody");
+  tbody.innerHTML = "";
+  disCandidates.forEach((c, i) => {
+    const tr = document.createElement("tr");
+    const checked = c.relevant && !c.already_ingested ? "checked" : "";
+    const dur = c.duration_sec ? ` · ${Math.round(c.duration_sec / 60)} min` : "";
+    const badge = c.relevant
+      ? '<span class="badge refined">relevant</span>'
+      : '<span class="badge" style="background:#2b1416;color:var(--bad);border:1px solid #6b2126">filtered out</span>';
+    const status = c.already_ingested
+      ? '<span class="note">already ingested</span>'
+      : '<span class="note">new</span>';
+    tr.innerHTML = `
+      <td><input type="checkbox" data-idx="${i}" ${checked} ${c.already_ingested ? "disabled" : ""}></td>
+      <td><a href="${esc(c.url)}" target="_blank" rel="noopener" style="color:var(--accent2)">${esc(c.title || c.id)}</a>
+        <div class="note">${esc((c.reason || ""))}${dur}</div></td>
+      <td>${esc(c.channel)}</td>
+      <td>${badge}</td>
+      <td>${status}</td>`;
+    tbody.appendChild(tr);
+  });
+  $("dis-filter-note").textContent =
+    `Filter: ${disCandidates[0]?.filter_engine || "n/a"} · pre-selected = judged relevant and not yet ingested` +
+    (disAsr ? " · ASR available for caption-less audio" :
+      " · no ASR backend — caption-less audio will be reported as failed");
+  $("dis-results").style.display = "block";
+}
+$("btn-dis-all").onclick = () => {
+  const boxes = [...$("dis-table").querySelectorAll("input[type=checkbox]:not(:disabled)")];
+  const anyOff = boxes.some(b => !b.checked);
+  boxes.forEach(b => b.checked = anyOff);
+};
+$("btn-dis-ingest").onclick = async () => {
+  const founder = $("dis-founder").value.trim();
+  const picked = [...$("dis-table").querySelectorAll("input[type=checkbox]:checked")]
+    .map(b => disCandidates[parseInt(b.dataset.idx)])
+    .filter(Boolean)
+    .map(c => ({ kind: c.kind, id: c.id, url: c.url, audio_url: c.audio_url || null,
+                 title: c.title, channel: c.channel, published: c.published || "" }));
+  if (!picked.length) return flash("flash-dis-ingest", "Select at least one candidate.", false);
+  $("btn-dis-ingest").disabled = true;
+  $("dis-ing-job").style.display = "block";
+  $("dis-ing-bar").style.width = "0%";
+  $("dis-ing-msg").textContent = "starting…";
+  try {
+    const start = await post("/api/discover/ingest", {
+      founder, company: $("dis-company").value.trim(), items: picked,
+    });
+    const job = await pollJob(start.job_id, j => {
+      $("dis-ing-bar").style.width = (j.progress * 100) + "%";
+      $("dis-ing-msg").textContent = j.message || j.status;
+    });
+    if (job.status === "error") throw new Error(job.error);
+    const r = job.result;
+    const failNote = (r.failed || []).length
+      ? ` ${r.failed.length} failed: ` + r.failed.map(f => `${f.source_title} (${f.error})`).join("; ")
+      : "";
+    const methodCounts = {};
+    (r.fetched_methods || []).forEach(m => methodCounts[m.method] = (methodCounts[m.method] || 0) + 1);
+    const methodNote = Object.keys(methodCounts).length
+      ? " Via " + Object.entries(methodCounts).map(([m, n]) => `${m} ×${n}`).join(", ") + "."
+      : "";
+    flash("flash-dis-ingest",
+      `Ingested ${r.ingested}, skipped ${r.skipped_unchanged} unchanged.${methodNote}${failNote}`,
+      !(r.failed || []).length);
+    disCandidates.forEach(c => {
+      if (picked.some(p => p.id === c.id)) c.already_ingested = true;
+    });
+    renderCandidates(null);
+    await Promise.all([refreshStatus(), refreshSources()]);
+  } catch (e) { flash("flash-dis-ingest", e.message, false); }
+  $("btn-dis-ingest").disabled = false;
+  setTimeout(() => { $("dis-ing-job").style.display = "none"; }, 1500);
+};
+
+// --- attribution audit ---
+const VERDICT_STYLE = {
+  speaker:   {label: "founder speaks",    color: "var(--good)"},
+  discussed: {label: "about the founder", color: "var(--accent2)"},
+  absent:    {label: "founder absent",    color: "var(--bad)"},
+};
+function renderAudit(r) {
+  const c = r.counts || {};
+  $("au-counts").innerHTML = ["speaker", "discussed", "absent"].map(k => `
+    <div class="metric"><div class="name">${VERDICT_STYLE[k].label}</div>
+      <div class="val" style="color:${VERDICT_STYLE[k].color}">${c[k] || 0}</div></div>`).join("");
+  const flagged = (r.results || []).filter(x => x.verdict === "absent" || x.confidence === "low");
+  $("au-results").innerHTML = !flagged.length
+    ? '<p class="note" style="color:var(--good)">Every source is correctly attributed.</p>'
+    : flagged.map(x => {
+        const st = VERDICT_STYLE[x.verdict] || VERDICT_STYLE.absent;
+        return `<details class="chunk"><summary>
+          <span class="tag" style="color:${st.color}">${esc(x.verdict)}</span>
+          <span>${esc(x.source_title)}</span>
+          <span class="score">${esc(x.founder)} · ${esc(x.confidence)}</span></summary>
+          <div class="body"><b>Actually:</b> ${esc(x.identified_as || "unclear")}<br>
+          ${esc(x.reason || "")}
+          ${x.evidence ? `<br><i>“${esc(x.evidence)}”</i>` : ""}</div></details>`;
+      }).join("");
+}
+async function runAudit(remove) {
+  if (remove && !confirm("Remove every source the LLM confidently judges mis-attributed?")) return;
+  $("btn-audit").disabled = true; $("btn-audit-remove").disabled = true;
+  $("au-job").style.display = "block";
+  $("au-job-bar").style.width = "0%";
+  $("au-job-msg").textContent = "starting…";
+  try {
+    const start = await post("/api/audit/attribution", {remove});
+    const job = await pollJob(start.job_id, j => {
+      $("au-job-bar").style.width = (j.progress * 100) + "%";
+      $("au-job-msg").textContent = j.message || j.status;
+    });
+    if (job.status === "error") throw new Error(job.error);
+    const r = job.result;
+    renderAudit(r);
+    const removed = (r.removed || []).length;
+    flash("flash-audit",
+      `Audited ${r.audited} source(s) — ${r.counts.absent || 0} mis-attributed`
+      + (removed ? `, ${removed} removed.` : "."),
+      !(r.counts.absent));
+    if (removed) await Promise.all([refreshStatus(), refreshSources()]);
+  } catch (e) { flash("flash-audit", e.message, false); }
+  $("btn-audit").disabled = false; $("btn-audit-remove").disabled = false;
+  setTimeout(() => { $("au-job").style.display = "none"; }, 1500);
+}
+$("btn-audit").onclick = () => runAudit(false);
+$("btn-audit-remove").onclick = () => runAudit(true);
+
+// --- sources ---
+async function refreshSources() {
+  try {
+    const r = await api("/api/sources");
+    const tbody = $("source-table").querySelector("tbody");
+    tbody.innerHTML = "";
+    (r.sources || []).forEach(s => {
+      const tr = document.createElement("tr");
+      const when = (s.ingested_at || "").slice(0, 16).replace("T", " ");
+      tr.innerHTML = `<td>${esc(s.source_title)}</td><td>${esc(s.founder)}</td>
+        <td>${esc(s.source_type)}</td><td>${s.chunks}</td><td class="note">${esc(when)}</td>
+        <td><button class="ghost" style="padding:3px 10px;font-size:12px" data-sid="${esc(s.source_id)}">delete</button></td>`;
+      tr.querySelector("button").onclick = async (ev) => {
+        if (!confirm(`Delete source "${s.source_title}" and its ${s.chunks} chunks?`)) return;
+        ev.target.disabled = true;
+        try {
+          await api("/api/sources/" + encodeURIComponent(s.source_id), { method: "DELETE" });
+          await Promise.all([refreshSources(), refreshStatus()]);
+        } catch (e) { flash("flash-upload", e.message, false); ev.target.disabled = false; }
+      };
+      tbody.appendChild(tr);
+    });
+    $("source-empty").style.display = (r.sources || []).length ? "none" : "block";
+  } catch (e) { console.error(e); }
+}
+
+// --- upload with background job polling ---
+async function pollJob(jobId, onTick) {
+  while (true) {
+    const j = await api("/api/jobs/" + jobId);
+    onTick(j);
+    if (j.status === "done" || j.status === "error") return j;
+    await new Promise(r => setTimeout(r, 600));
+  }
+}
+$("btn-upload").onclick = async () => {
+  const files = $("up-files").files;
+  if (!files.length) return flash("flash-upload", "Choose at least one file.", false);
+  const fd = new FormData();
+  [...files].forEach(f => fd.append("files", f));
+  fd.append("founder", $("up-founder").value.trim());
+  fd.append("company", $("up-company").value.trim());
+  fd.append("source_type", $("up-type").value);
+  $("btn-upload").disabled = true;
+  $("up-job").style.display = "block";
+  $("up-job-bar").style.width = "0%";
+  $("up-job-msg").textContent = "uploading…";
+  try {
+    const res = await fetch("/api/ingest/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    const job = await pollJob(data.job_id, j => {
+      $("up-job-bar").style.width = (j.progress * 100) + "%";
+      $("up-job-msg").textContent = j.message || j.status;
+    });
+    if (job.status === "error") throw new Error(job.error);
+    const r = job.result;
+    const failNote = (r.failed || []).length
+      ? ` ${r.failed.length} failed: ` + r.failed.map(f => `${f.source_title} (${f.error})`).join("; ")
+      : "";
+    flash("flash-upload",
+      `Indexed ${r.ingested} document(s), skipped ${r.skipped_unchanged} unchanged.${failNote}`,
+      !(r.failed || []).length);
+    $("up-files").value = "";
+    await Promise.all([refreshSources(), refreshStatus()]);
+  } catch (e) { flash("flash-upload", e.message, false); }
+  $("btn-upload").disabled = false;
+  setTimeout(() => { $("up-job").style.display = "none"; }, 1500);
+};
+
+// --- narrative export: the deliverable, not the chat ---
+let lastNarrative = null;
+$("btn-nar-export").onclick = () => {
+  if (!lastNarrative) return flash("flash-nar", "Generate a narrative first.", false);
+  const r = lastNarrative;
+  const f = r.faithfulness, c = r.ccs;
+  const lines = [
+    `# ${r.founder}${r.company ? " — " + r.company : ""}`,
+    "",
+    "_Entrepreneurial journey reconstructed from public media by Unicorn Journeys RAG._",
+    `_Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} · engine: ${r.llm_mode}${r.refined ? " · auto-refined" : ""}_`,
+    "",
+    "## Evaluation",
+    "",
+    "| Metric | Score |",
+    "|---|---|",
+    `| Faithfulness | ${f.faithfulness.toFixed(3)} |`,
+    `| Hallucination rate | ${f.hallucination_rate.toFixed(3)} |`,
+    `| Context Completeness (CCS) | ${c.ccs.toFixed(3)} |`,
+    `| Claims supported | ${f.supported_claims}/${f.total_claims} |`,
+    "",
+    "Theme coverage: " + Object.entries(c.theme_scores)
+      .map(([k, v]) => `${(THEME_LABELS[k] || k)} ${v.toFixed(2)}`).join(" · "),
+    "",
+    "---",
+    "",
+    r.narrative,
+    "",
+    "---",
+    "",
+    "## Sources",
+    "",
+    ...(r.citations || []).map((ct, i) => {
+      const ch = (r.chunks || [])[i] || {};
+      return `- **[${ct.tag}]** ${ct.source_title} — _${ct.source_type}_${ch.fusion_score ? ` (fusion ${ch.fusion_score})` : ""}`;
+    }),
+    "",
+    "_Sources are machine transcripts of public recordings; speech recognition may garble names and figures._",
+  ];
+  const blob = new Blob([lines.join("\n")], {type: "text/markdown"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${r.founder.replace(/\s+/g, "-").toLowerCase()}-journey.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+// --- ingest ---
+$("btn-ingest").onclick = async () => {
+  const body = {
+    founder: $("in-founder").value.trim(),
+    company: $("in-company").value.trim(),
+    source_title: $("in-title").value.trim(),
+    source_type: $("in-type").value,
+    text: $("in-text").value.trim(),
+  };
+  if (!body.founder || !body.source_title || body.text.length < 40)
+    return flash("flash-ingest", "Founder, source title, and at least 40 characters of text are required.", false);
+  busy("spin-ingest", $("btn-ingest"), true);
+  try {
+    const r = await post("/api/ingest", body);
+    if (r.failed && r.failed.length) {
+      flash("flash-ingest", `Rejected: ${r.failed[0].error}`, false);
+    } else if (r.ingested === 0) {
+      flash("flash-ingest", "Skipped — identical content already indexed.", true);
+    } else {
+      flash("flash-ingest", `Indexed. Corpus now has ${r.chunks} chunks.`, true);
+      $("in-text").value = "";
+    }
+    await Promise.all([refreshStatus(), refreshSources()]);
+  } catch (e) { flash("flash-ingest", e.message, false); }
+  busy("spin-ingest", $("btn-ingest"), false);
+};
+
+refreshStatus();
+refreshSources();
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same branch — a stale CI result helps no one.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest ruff
+
+      # Lint only. `ruff format` is deliberately not enforced: the codebase is
+      # hand-formatted for readability and a blanket reformat would bury real
+      # diffs in noise. Run `ruff format` on your own code if you like it.
+      - name: Lint
+        run: ruff check .
+
+      # The suite is hermetic: no network, no credentials, no MongoDB. Any test
+      # that needs those is the bug, not the missing secret.
+      - name: Test
+        run: python -m pytest tests/ -q
+
+  secrets:
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # gitleaks scans history, not just the tip, so a secret committed and
+          # later deleted is still caught.
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    name: docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t unicorn-rag:ci .
+
+      # Proves the container actually serves before anyone deploys it.
+      - name: Smoke test the container
+        run: |
+          docker run -d --name rag -p 8017:8017 unicorn-rag:ci
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8017/api/status > /dev/null; then
+              echo "API is up"
+              curl -fsS http://localhost:8017/api/status
+              docker rm -f rag
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "API did not come up in time" >&2
+          docker logs rag
+          docker rm -f rag
+          exit 1

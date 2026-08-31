@@ -1,0 +1,55 @@
+# Two ways to run this stack:
+#
+#   docker compose up                      # app only, local file-based index
+#   docker compose --profile mongo up      # app + a local MongoDB
+#
+# The app profile alone needs nothing configured — it starts in offline
+# extractive mode with a local vector index. Add credentials in .env (never
+# commit it) to enable Claude generation, and see the README for MongoDB Atlas,
+# which is the recommended store for anything beyond a laptop.
+
+services:
+  app:
+    build: .
+    ports:
+      - "8017:8017"
+    env_file:
+      # Optional: `cp .env.example .env` first. Compose fails if it is missing,
+      # so the `required: false` flag keeps the zero-config path working.
+      - path: .env
+        required: false
+    environment:
+      # Persisted state lives in named volumes, so `docker compose down` keeps
+      # the corpus and `down -v` discards it.
+      VECTOR_STORE: ${VECTOR_STORE:-auto}
+    volumes:
+      - index:/app/data/index
+      - transcripts:/app/data/transcripts
+      # The embedding model is ~130 MB; caching it makes restarts instant.
+      - models:/home/app/.cache
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8017/api/status').read()"]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s   # first boot downloads the embedding model
+      retries: 3
+    restart: unless-stopped
+
+  # Enabled only with `--profile mongo`. Note this is a plain mongod: it has no
+  # $vectorSearch, so the store falls back to client-side cosine, which is
+  # correct but slower. Atlas provides the native index.
+  mongo:
+    profiles: ["mongo"]
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo:/data/db
+    restart: unless-stopped
+
+volumes:
+  index:
+  transcripts:
+  models:
+  mongo:

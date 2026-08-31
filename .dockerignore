@@ -1,0 +1,38 @@
+# Secrets must never enter the build context — an image layer keeps them even
+# if a later step deletes the file.
+.env
+.env.*
+!.env.example
+secrets/
+*credentials*.env
+*cookies*.txt
+*.pem
+*.key
+
+# Local state that the container rebuilds or collects for itself.
+data/index/
+data/transcripts/*
+data/eval/runs/
+data/eval/latest.json
+
+# Build noise
+.git/
+.github/
+.claude/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+tests/
+docs/
+*.pdf
+*.md
+!data/samples/README.md
+.DS_Store
+Thumbs.db
+desktop.ini

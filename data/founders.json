@@ -1,0 +1,117 @@
+{
+  "_comment": "Founder roster. The first sixteen are the founders of the six African unicorns studied in SSRN 5184838 (Table 1); entries after them are later additions beyond the paper's 2024 cohort. 'query' overrides the default search string where a founder's public profile is better matched by other terms.",
+  "founders": [
+    {
+      "name": "Ahmed Mohsen",
+      "company": "MNT-Halan",
+      "country": "Egypt",
+      "query": "Ahmed Mohsen MNT-Halan Halan Egypt founder interview"
+    },
+    {
+      "name": "Mohamed Aboulnaga",
+      "company": "MNT-Halan",
+      "country": "Egypt",
+      "query": "Mohamed Aboulnaga Halan MNT-Halan co-founder interview"
+    },
+    {
+      "name": "Mounir Nakhla",
+      "company": "MNT-Halan",
+      "country": "Egypt",
+      "query": "Mounir Nakhla MNT-Halan founder CEO interview Egypt fintech"
+    },
+    {
+      "name": "Felix Ike",
+      "company": "Moniepoint",
+      "country": "Nigeria",
+      "query": "Felix Ike Moniepoint TeamApt co-founder interview"
+    },
+    {
+      "name": "Tosin Eniolorunda",
+      "company": "Moniepoint",
+      "country": "Nigeria",
+      "query": "Tosin Eniolorunda Moniepoint founder CEO interview"
+    },
+    {
+      "name": "Coenraad Jonker",
+      "company": "TymeBank",
+      "country": "South Africa",
+      "query": "Coenraad Jonker TymeBank Tyme co-founder CEO interview"
+    },
+    {
+      "name": "Patrice Motsepe",
+      "company": "African Rainbow Capital / Tyme",
+      "country": "South Africa",
+      "query": "Patrice Motsepe African Rainbow interview entrepreneurship"
+    },
+    {
+      "name": "Adeleke Adekoya",
+      "company": "Flutterwave",
+      "country": "Nigeria",
+      "query": "Adeleke Adekoya Flutterwave co-founder interview"
+    },
+    {
+      "name": "Iyinoluwa Aboyeji",
+      "company": "Flutterwave / Andela",
+      "country": "Nigeria",
+      "query": "Iyinoluwa Aboyeji Andela Flutterwave Future Africa interview"
+    },
+    {
+      "name": "Olugbenga Agboola",
+      "company": "Flutterwave",
+      "country": "Nigeria",
+      "query": "Olugbenga Agboola GB Flutterwave founder CEO interview"
+    },
+    {
+      "name": "Mitchell Elegbe",
+      "company": "Interswitch",
+      "country": "Nigeria",
+      "query": "Mitchell Elegbe Interswitch founder GMD interview"
+    },
+    {
+      "name": "Brice Nkengsa",
+      "company": "Andela",
+      "country": "Nigeria",
+      "query": "Brice Nkengsa Andela co-founder engineering interview"
+    },
+    {
+      "name": "Christina Sass",
+      "company": "Andela",
+      "country": "Nigeria",
+      "query": "Christina Sass Andela co-founder president interview"
+    },
+    {
+      "name": "Ian Carnevale",
+      "company": "Andela",
+      "country": "Nigeria",
+      "query": "Ian Carnevale Andela co-founder interview"
+    },
+    {
+      "name": "Jeremy Johnson",
+      "company": "Andela",
+      "country": "Nigeria",
+      "query": "Jeremy Johnson Andela co-founder CEO interview"
+    },
+    {
+      "name": "Nadayar Enegesi",
+      "company": "Andela",
+      "country": "Nigeria",
+      "query": "Nadayar Enegesi Andela co-founder Eden Life interview"
+    },
+    {
+      "name": "Ladi Delano",
+      "company": "Moove",
+      "country": "Nigeria",
+      "inception": 2020,
+      "added_beyond_paper": true,
+      "query": "Ladi Delano Moove co-founder CEO interview mobility fintech"
+    },
+    {
+      "name": "Jide Odunsi",
+      "company": "Moove",
+      "country": "Nigeria",
+      "inception": 2020,
+      "added_beyond_paper": true,
+      "query": "Jide Odunsi Moove co-founder interview"
+    }
+  ]
+}

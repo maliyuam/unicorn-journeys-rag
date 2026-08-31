@@ -1,0 +1,29 @@
+# gitleaks configuration.
+#
+# Start from the maintained default rule set, then allow the two connection
+# strings that appear in documentation. Both are obvious placeholders, not
+# credentials — but a scanner that cries wolf on its own docs gets ignored,
+# and an ignored scanner protects nothing.
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "mongodb-connection-string"
+description = "MongoDB connection string with an embedded password"
+regex = '''mongodb(\+srv)?://[^\s:@/]+:[^\s:@/]+@[^\s/]+'''
+tags = ["mongodb", "credential"]
+
+  [rules.allowlist]
+  regexTarget = "match"
+  regexes = [
+    # .env.example and docs/deployment.md
+    '''mongodb\+srv://(user:pass|USER:PASSWORD)@''',
+  ]
+
+[allowlist]
+description = "Paths that only ever contain placeholders or fictional content"
+paths = [
+  '''\.env\.example$''',
+  '''^data/samples/''',
+]

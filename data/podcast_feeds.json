@@ -1,0 +1,45 @@
+{
+  "_comment": "African tech/startup podcast RSS feeds, verified to parse and to carry audio enclosures. Podcast RSS is the ingestion channel that YouTube rate limiting cannot affect: the XML and the audio are served by the publisher, not by YouTube. Episodes without captions are transcribed locally with faster-whisper. Discover more by name with GET /api/podcasts/search?term=...",
+  "feeds": [
+    {
+      "name": "The Flip",
+      "feed_url": "https://anchor.fm/s/114238e48/podcast/rss",
+      "note": "Founder interviews across African markets; the leading Africa tech show"
+    },
+    {
+      "name": "Afrobility: Africa Tech and Business",
+      "feed_url": "https://anchor.fm/s/222060e4/podcast/rss",
+      "note": "Deep dives on African technology companies and their founders"
+    },
+    {
+      "name": "African Tech Roundup Podcast",
+      "feed_url": "https://feeds.transistor.fm/african-tech-roundup",
+      "note": "Long-running ecosystem show with founder and operator guests"
+    },
+    {
+      "name": "African Tech Conversations",
+      "feed_url": "https://feeds.transistor.fm/african-tech-conversations",
+      "note": "Interview format with builders across the continent"
+    },
+    {
+      "name": "The Wimbart Way",
+      "feed_url": "https://anchor.fm/s/10c575c80/podcast/rss",
+      "note": "Africa-focused PR firm interviewing startup founders"
+    },
+    {
+      "name": "Live The African Dream by Ajim Capital",
+      "feed_url": "https://anchor.fm/s/7e9b0068/podcast/rss",
+      "note": "VC-hosted founder conversations"
+    },
+    {
+      "name": "SaaSAfr. Podcast",
+      "feed_url": "https://api.substack.com/feed/podcast/3620095.rss",
+      "note": "African SaaS founders"
+    },
+    {
+      "name": "The Beyond Capital Podcast",
+      "feed_url": "https://feeds.transistor.fm/beyond-capital",
+      "note": "Impact investing and emerging-market founders"
+    }
+  ]
+}

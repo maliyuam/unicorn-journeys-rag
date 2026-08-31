@@ -1,0 +1,59 @@
+[project]
+name = "unicorn-journeys-rag"
+version = "2.1.0"
+description = "Retrieval-augmented pipeline for building cited narratives of entrepreneurial journeys from interview transcripts."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+keywords = ["rag", "retrieval-augmented-generation", "vector-search", "mongodb", "evaluation"]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Framework :: FastAPI",
+]
+# Runtime dependencies are declared in requirements.txt, which is what both the
+# Dockerfile and CI install. Keeping one list avoids the two drifting apart.
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/maliyuam/unicorn-journeys-rag"
+Issues = "https://github.com/maliyuam/unicorn-journeys-rag/issues"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools]
+packages = ["backend"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+extend-exclude = ["data", "frontend"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # import sorting
+    "UP",  # pyupgrade
+    "B",   # bugbear
+    "C4",  # comprehensions
+]
+ignore = [
+    "E501",  # line length is enforced by the formatter, not the linter
+    "B008",  # FastAPI's Depends()/File() defaults are the documented idiom
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts and tests deliberately mutate sys.path before importing the package,
+# so their imports cannot all sit at the top of the file.
+"scripts/*.py" = ["E402"]
+"tests/*.py" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

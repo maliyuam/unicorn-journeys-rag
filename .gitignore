@@ -1,0 +1,64 @@
+# ---------------------------------------------------------------------------
+# Secrets — never commit
+# ---------------------------------------------------------------------------
+# Every .env variant is ignored; .env.example is the only one tracked.
+.env
+.env.*
+!.env.example
+*credentials*.env
+secrets/*
+!secrets/README.md
+cookies.txt
+*cookies*.txt
+*.pem
+*.key
+
+# ---------------------------------------------------------------------------
+# Local data & generated artifacts
+# ---------------------------------------------------------------------------
+# Vector index: rebuilt by ingesting; large and machine-specific.
+data/index/
+# Corpus collected by the connectors — yours to gather, not to redistribute.
+data/transcripts/*
+!data/transcripts/.gitkeep
+# Evaluation run history is a local baseline, not a shared artifact.
+data/eval/runs/
+data/eval/latest.json
+
+# Third-party paper PDF — read it at the SSRN link in the README instead of
+# redistributing a copyrighted work.
+*.pdf
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# ---------------------------------------------------------------------------
+# Model / tool caches
+# ---------------------------------------------------------------------------
+.cache/
+.fastembed_cache/
+
+# ---------------------------------------------------------------------------
+# Editors & OS
+# ---------------------------------------------------------------------------
+.claude/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

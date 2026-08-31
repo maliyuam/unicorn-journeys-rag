@@ -1,0 +1,16 @@
+fastapi>=0.115
+uvicorn>=0.30
+anthropic>=0.120
+pymongo>=4.10
+python-dotenv>=1.0
+numpy>=2.0
+scikit-learn>=1.5
+yt-dlp>=2025.1.1
+feedparser>=6.0
+youtube-transcript-api>=0.6
+requests>=2.31
+fastembed>=0.4
+# Optional upgrades (uncomment to enable):
+# sentence-transformers>=3.0   # local neural embeddings (BAAI/bge-small-en-v1.5)
+# voyageai>=0.3                # hosted embeddings via VOYAGE_API_KEY
+# faster-whisper>=1.0          # local ASR: transcribe audio/videos directly

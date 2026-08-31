@@ -1,0 +1,124 @@
+{
+  "_comment": "Golden dev set for retrieval + generation evaluation. Every item is grounded in LIVE ingested media — no synthetic content. Each `evidence` string was read out of the indexed corpus before being written here, so labels are verifiable. Relevance is defined by evidence appearing in a chunk (not by chunk ID), which keeps labels valid across re-chunking and embedder swaps. Keep the set small and honest; grow it from observed failures (error analysis), not speculation. ASR transcripts are unpunctuated and sometimes mis-spell names, so evidence strings use the spelling that actually appears in the transcript.",
+  "goldens": [
+    {
+      "id": "g01",
+      "question": "In what year did Tyme build the first version of its business?",
+      "founder": "Coenraad Jonker",
+      "evidence": ["back in 2012"],
+      "source_hint": "E01: What It Takes to Build a Digital Bank"
+    },
+    {
+      "id": "g02",
+      "question": "Where is the Tyme digital banking group headquartered?",
+      "founder": "Coenraad Jonker",
+      "evidence": ["headquartered in singapore"],
+      "source_hint": "Banking the Future with Visionary Coen Jonker"
+    },
+    {
+      "id": "g03",
+      "question": "How much money had Andela raised from investors?",
+      "founder": "Jeremy Johnson",
+      "evidence": ["81 million"],
+      "source_hint": "E862 Andela Jeremy Johnson"
+    },
+    {
+      "id": "g04",
+      "question": "How much investment did Interswitch ask for from the central bank scheme, and how much did it receive?",
+      "founder": "Mitchell Elegbe",
+      "evidence": ["450 million", "200 million"],
+      "source_hint": "#thebigtechshow EP 3"
+    },
+    {
+      "id": "g05",
+      "question": "What share of the payment card market did Interswitch consider big enough to build a domestic scheme?",
+      "founder": "Mitchell Elegbe",
+      "evidence": ["95 percent"],
+      "source_hint": "#thebigtechshow EP 3"
+    },
+    {
+      "id": "g06",
+      "question": "Which company approached Mounir Nakhla in 2009 about selling three-wheelers on credit?",
+      "founder": "Mounir Nakhla",
+      "evidence": ["gb auto"],
+      "source_hint": "FinTech Unplugged with Mounir Nakhla"
+    },
+    {
+      "id": "g07",
+      "question": "How many branches did Mounir Nakhla's microfinance company grow to?",
+      "founder": "Mounir Nakhla",
+      "evidence": ["600 branches"],
+      "source_hint": "FinTech Unplugged with Mounir Nakhla"
+    },
+    {
+      "id": "g08",
+      "question": "What was the subject of Mounir Nakhla's undergraduate dissertation?",
+      "founder": "Mounir Nakhla",
+      "evidence": ["impact of microfinance"],
+      "source_hint": "FinTech Unplugged with Mounir Nakhla"
+    },
+    {
+      "id": "g09",
+      "question": "How much funding did Halan raise in February?",
+      "founder": "Mohamed Aboulnaga",
+      "evidence": ["260 million"],
+      "source_hint": "MENA Startup Ecosystem Is Taking Off"
+    },
+    {
+      "id": "g10",
+      "question": "How many technologists does Andela have on staff?",
+      "founder": "Christina Sass",
+      "evidence": ["thousand technologists"],
+      "source_hint": "Debunking Tech Talent Myths"
+    },
+    {
+      "id": "g11",
+      "question": "What did Iyinoluwa Aboyeji set out to prove with Flutterwave?",
+      "founder": "Iyinoluwa Aboyeji",
+      "evidence": ["all-nigerian team", "all nigerian team"],
+      "source_hint": "From Andela to Flutterwave"
+    },
+    {
+      "id": "g12",
+      "question": "What business did Iyinoluwa Aboyeji build while still in school, before Andela?",
+      "founder": "Iyinoluwa Aboyeji",
+      "evidence": ["bookneto", "book netto"],
+      "source_hint": "What You Must Know About Impact"
+    },
+    {
+      "id": "g13",
+      "question": "What did Nadayar Enegesi study before joining the tech industry in Canada?",
+      "founder": "Nadayar Enegesi",
+      "evidence": ["degree in computer science"],
+      "source_hint": "Scaling through crisis with Nadayar Enegesi"
+    },
+    {
+      "id": "g14",
+      "question": "Which ride-hailing company has Flutterwave worked with?",
+      "founder": "Olugbenga Agboola",
+      "evidence": ["worked with uber"],
+      "source_hint": "Olugbenga GB Agboola, CEO of Flutterwave"
+    },
+    {
+      "id": "g15",
+      "question": "By how much did African Rainbow Minerals' headline earnings increase?",
+      "founder": "Patrice Motsepe",
+      "evidence": ["134 percent"],
+      "source_hint": "The major challenge of the mining industry"
+    },
+    {
+      "id": "g16",
+      "question": "How many people does Moniepoint serve, and what milestone did it reach?",
+      "founder": "Tosin Eniolorunda",
+      "evidence": ["13 million people"],
+      "source_hint": "Tosin Eniolorunda on His Early Life, Building Moniepoint"
+    },
+    {
+      "id": "g17",
+      "question": "What annual revenue has Moniepoint approached?",
+      "founder": "Tosin Eniolorunda",
+      "evidence": ["half a billion"],
+      "source_hint": "Tosin Eniolorunda on His Early Life, Building Moniepoint"
+    }
+  ]
+}

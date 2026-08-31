@@ -1,0 +1,9 @@
+# Normalise line endings: the repo stores LF, checkouts get the platform default.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF so they run under PowerShell without surprises.
+*.ps1 text eol=crlf
+
+# Keep generated/vendored data out of diff noise and language statistics.
+data/eval/*.json linguist-generated=true
+data/samples/*.json linguist-language=Text

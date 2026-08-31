@@ -1,0 +1,58 @@
+name: Bug report
+description: Something behaves differently than documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most confusing behaviour turns out to be a **silent fallback** — Atlas
+        unreachable, credentials unresolved, an embedding backend not installed.
+        `GET /api/status` reports what is actually in use, so please paste it.
+
+  - type: textarea
+    id: status
+    attributes:
+      label: Output of `curl localhost:8017/api/status`
+      description: Reports the store, embedder and LLM mode actually in use.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you ran, what you got, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: If it reproduces on the bundled sample corpus, say so — that makes it far easier to fix.
+      placeholder: |
+        1. Load sample corpus
+        2. Ask "..."
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Python version and OS
+      placeholder: "3.12 on Ubuntu 24.04 / 3.11 on Windows 11"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        **Transcript fetch failures:** paste `GET /api/connectivity` too. It
+        says in seconds whether the network is being bot-checked, which is the
+        cause more often than not.
+
+        **Never paste a credential** — no `MONGODB_URI` with its password, no
+        API key, no cookie values. Security issues go through
+        [SECURITY.md](../SECURITY.md), not this tracker.
