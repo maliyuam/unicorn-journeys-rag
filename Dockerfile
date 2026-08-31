@@ -15,7 +15,12 @@ FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    # fastembed caches its ONNX model here; see the volume note in the README.
+    # Model cache MUST point somewhere the non-root user can write. Left to its
+    # default this resolves under the user's home; pinning it here keeps it on
+    # the volume mounted by docker-compose so restarts do not re-download, and
+    # guarantees the write cannot land in the root-owned /app. A failed mkdir
+    # here does not crash — it silently downgrades retrieval to TF-IDF.
+    MODEL_CACHE_DIR=/home/app/.cache/unicorn-rag \
     HF_HOME=/home/app/.cache/huggingface
 
 WORKDIR /app
@@ -32,7 +37,8 @@ COPY data/ ./data/
 # Run as a non-root user, and give it ownership of the paths written at
 # runtime: the vector index, collected transcripts, and the model cache.
 RUN useradd --create-home --uid 10001 app \
-    && mkdir -p /app/data/index /app/data/transcripts /home/app/.cache \
+    && mkdir -p /app/data/index /app/data/transcripts \
+                /home/app/.cache/unicorn-rag /home/app/.cache/huggingface \
     && chown -R app:app /app/data /home/app
 USER app
 

@@ -119,5 +119,19 @@ TRANSCRIPTS_DIR = DATA_DIR / "transcripts"
 SAMPLES_DIR = DATA_DIR / "samples"
 FRONTEND_DIR = ROOT / "frontend"
 
+# Where downloaded embedding/reranker models are cached. Defaults to the
+# platform's user cache directory — NOT the working tree, which is what a
+# relative path silently produced on Linux and macOS, and not a root-owned
+# container path, where the mkdir fails and the engine quietly downgrades to
+# TF-IDF. Override for read-only homes or a shared volume.
+def _default_model_cache() -> Path:
+    if os.name == "nt" and os.getenv("LOCALAPPDATA"):
+        return Path(os.environ["LOCALAPPDATA"]) / "UnicornRAG" / "model_cache"
+    xdg = os.getenv("XDG_CACHE_HOME")
+    return Path(xdg) / "unicorn-rag" if xdg else Path.home() / ".cache" / "unicorn-rag"
+
+
+MODEL_CACHE_DIR = Path(os.getenv("MODEL_CACHE_DIR") or _default_model_cache())
+
 INDEX_DIR.mkdir(parents=True, exist_ok=True)
 TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)

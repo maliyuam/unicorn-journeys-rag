@@ -1,5 +1,12 @@
 fastapi>=0.115
 uvicorn>=0.30
+# Required by FastAPI to parse the multipart upload on /api/ingest/upload.
+# FastAPI imports it internally, so nothing in this codebase imports it by name
+# — but without it the app raises at IMPORT time and never starts at all.
+python-multipart>=0.0.9
+# Used directly for the request models in backend/app.py. It arrives as a
+# FastAPI dependency anyway; declaring it keeps that implicit reliance honest.
+pydantic>=2.0
 anthropic>=0.120
 pymongo>=4.10
 python-dotenv>=1.0

@@ -51,6 +51,9 @@ env/
 # ---------------------------------------------------------------------------
 .cache/
 .fastembed_cache/
+# Older builds resolved the model cache relative to the working tree on
+# non-Windows platforms; ignore the leftover directory.
+UnicornRAG/
 
 # ---------------------------------------------------------------------------
 # Editors & OS

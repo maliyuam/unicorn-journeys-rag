@@ -214,7 +214,11 @@ ruff check .
 python -m pytest tests/ -q     # 70 tests
 ```
 
-The suite is hermetic: no network, no credentials, no MongoDB.
+The suite needs no credentials and never touches a configured MongoDB — a
+`conftest.py` fixture forces the offline LLM and an empty `MONGODB_URI`, so
+running it cannot bill an API key or wipe a live collection. It is not fully
+network-free on a cold machine: several tests build a real `Engine`, which
+downloads the ~130 MB embedding model once (CI caches it).
 
 ## Licence
 

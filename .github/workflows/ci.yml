@@ -37,14 +37,23 @@ jobs:
           pip install -r requirements.txt
           pip install pytest ruff
 
+      # Several tests build a real Engine, which loads the fastembed model.
+      # Without this the runner re-downloads ~130 MB on every job.
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/unicorn-rag
+          key: model-cache-${{ runner.os }}-bge-small-en-v1.5
+
       # Lint only. `ruff format` is deliberately not enforced: the codebase is
       # hand-formatted for readability and a blanket reformat would bury real
       # diffs in noise. Run `ruff format` on your own code if you like it.
       - name: Lint
         run: ruff check .
 
-      # The suite is hermetic: no network, no credentials, no MongoDB. Any test
-      # that needs those is the bug, not the missing secret.
+      # conftest.py forces the offline LLM and an empty MONGODB_URI, so no test
+      # can spend credentials or touch a real database. The embedding model is
+      # a genuine network dependency on a cold runner, hence the cache above.
       - name: Test
         run: python -m pytest tests/ -q
 

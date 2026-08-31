@@ -7,11 +7,14 @@ upgrade is BAAI/bge-small-en-v1.5 or voyage-3.5, both wired here.
 """
 from __future__ import annotations
 
+import logging
 import pickle
 
 import numpy as np
 
 from . import config
+
+log = logging.getLogger(__name__)
 
 
 class BaseEmbedder:
@@ -88,12 +91,9 @@ class FastEmbedEmbedder(BaseEmbedder):
     name = "fastembed (BAAI/bge-small-en-v1.5, 384-d)"
 
     def __init__(self):
-        import os
-        from pathlib import Path
-
         from fastembed import TextEmbedding
 
-        cache = Path(os.environ.get("LOCALAPPDATA", ".")) / "UnicornRAG" / "fastembed_cache"
+        cache = config.MODEL_CACHE_DIR
         cache.mkdir(parents=True, exist_ok=True)
         self.model = TextEmbedding("BAAI/bge-small-en-v1.5", cache_dir=str(cache))
 
@@ -141,23 +141,42 @@ class VoyageEmbedder(BaseEmbedder):
 
 
 def build_embedder() -> BaseEmbedder:
+    """Pick the best available backend.
+
+    A failure in "auto" mode is a *downgrade*, not an error, so it is logged
+    loudly: falling back to TF-IDF silently costs real retrieval quality and
+    looks identical from the outside until someone measures it.
+    """
     backend = config.EMBEDDING_BACKEND
     if backend in ("auto", "voyage") and config.VOYAGE_API_KEY:
         try:
             return VoyageEmbedder()
-        except Exception:
+        except Exception as e:
             if backend == "voyage":
                 raise
+            log.warning("voyage embeddings unavailable (%s) — trying fastembed", e)
     if backend in ("auto", "fastembed"):
         try:
             return FastEmbedEmbedder()
-        except Exception:
+        except Exception as e:
             if backend == "fastembed":
                 raise
+            log.warning(
+                "fastembed unavailable (%s) — trying sentence-transformers. "
+                "Set MODEL_CACHE_DIR to a writable path if this is a permissions "
+                "problem.", e,
+            )
     if backend in ("auto", "sentence-transformers"):
         try:
             return SentenceTransformerEmbedder()
-        except Exception:
+        except Exception as e:
             if backend == "sentence-transformers":
                 raise
+            log.warning("sentence-transformers unavailable (%s)", e)
+    if backend == "auto":
+        log.warning(
+            "FALLING BACK TO TF-IDF: no neural embedding backend loaded. "
+            "Retrieval quality will be materially worse than the documented "
+            "default (BAAI/bge-small-en-v1.5). Check the warnings above."
+        )
     return TfidfEmbedder()

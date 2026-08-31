@@ -16,8 +16,14 @@ pip install pytest ruff
 ```
 
 No credentials are required to develop. Without them the app runs in offline
-extractive mode, and the whole test suite is hermetic — it makes no network
-calls, needs no API key, and never touches a configured MongoDB.
+extractive mode.
+
+The test suite needs no API key and never touches a configured MongoDB:
+`tests/conftest.py` forces the offline LLM and an empty `MONGODB_URI` for every
+test, so running it cannot spend your Anthropic budget or empty a live
+collection (`replace_all()` begins with `delete_many({})`). It is *not*
+network-free on a cold machine — several tests build a real `Engine`, which
+downloads the embedding model on first use.
 
 Load the bundled sample corpus and you have a working system:
 

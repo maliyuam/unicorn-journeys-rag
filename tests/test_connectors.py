@@ -5,8 +5,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import pytest
 
 from backend.connectors import (
+    ConnectorError,
     _pick_caption_url,
     _pick_proxy_caption,
     check_youtube_access,
@@ -245,3 +247,25 @@ about African fintech
     assert "<c>" not in text and "00:00" not in text
     assert text.count("so today we talk") == 1
     assert "about African fintech" in text
+
+
+def test_fetch_rss_refuses_non_http_locators():
+    """SSRF / local-file guard.
+
+    `feed_url` comes straight from an API caller and feedparser will happily
+    treat it as a local path or a file:// URL. Only http(s) locators may cause
+    a fetch; inline feed XML stays allowed because it is parsed, not fetched.
+    """
+    for hostile in (
+        "file:///etc/passwd",
+        "file://C:/Windows/win.ini",
+        "/etc/passwd",
+        r"C:\Windows\win.ini",
+        "ftp://example.com/feed.xml",
+        "http://169.254.169.254/latest/meta-data/".replace("http://", "gopher://"),
+    ):
+        with pytest.raises(ConnectorError, match="http"):
+            fetch_rss(hostile)
+
+    # inline XML is still accepted — it is content, not a locator
+    assert fetch_rss("<rss version='2.0'><channel><title>T</title></channel></rss>") == []
