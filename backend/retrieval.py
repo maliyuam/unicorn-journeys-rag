@@ -17,6 +17,7 @@ import numpy as np
 
 from . import config
 from .llm import LLMUnavailable
+from .prompts import EXPANSION_SYSTEM as _EXPANSION_SYSTEM
 from .rerank import rerank_chunks
 
 _TOKEN_RE = re.compile(r"[a-z0-9']+")
@@ -85,39 +86,6 @@ _EXPANSION_SCHEMA = {
     "additionalProperties": False,
 }
 
-_EXPANSION_SYSTEM = """You are a query decomposition agent for a \
-retrieval-augmented system whose corpus is machine transcripts of interviews, \
-podcasts and keynotes with African startup founders.
-
-Decompose the main query into 4 to 8 atomic sub-queries that will be run \
-against a hybrid keyword + semantic index.
-
-Each sub-query must:
-- target ONE retrievable fact, never a compound request;
-- stand alone, without pronouns or references to the other sub-queries;
-- reuse the concrete anchors from the main query verbatim — personal names, \
-company names, places, years — because exact terms drive the keyword half of \
-the index;
-- prefer the vocabulary a speaker would actually use out loud ("we raised", \
-"we launched", "back in 2012") over formal or academic phrasing, since the \
-corpus is transcribed speech;
-- include, where the fact is quantitative, a phrasing that anticipates the \
-figure ("how much did X raise", "what valuation", "how many customers").
-
-When the question asks *which* company, person, investor or product — a \
-category whose members you know — name the plausible candidates explicitly in \
-separate sub-queries. A transcript says "we've worked with Uber", never "we \
-worked with a ride-hailing company", so a sub-query containing the category \
-alone cannot match it. Ask "did the company work with Uber?", "did the company \
-work with Bolt?" and so on. Guessing costs nothing: a wrong candidate simply \
-retrieves nothing, while a right one finds the passage that answers the \
-question. Never state a guess as fact — these are search probes, not claims.
-
-Cover distinct angles rather than restating one idea. If the main query is \
-already atomic, still produce variants that differ in wording, because the \
-transcripts may phrase the same fact very differently.
-
-Do not answer the query. Do not add commentary."""
 
 
 def expand_query(llm, question: str, founder: str | None = None) -> list[str]:
@@ -218,5 +186,42 @@ def hybrid_search(
         chunk["fusion_score"] = round(score, 4)
         results.append(chunk)
     if rerank:
-        return rerank_chunks(question, results, k)
-    return results[:k]
+        final = rerank_chunks(question, results, k)
+    else:
+        final = results[:k]
+    return _annotate_question_similarity(store, embedder, question, final)
+
+
+def _annotate_question_similarity(store, embedder, question, chunks) -> list[dict]:
+    """Attach `question_similarity`: cosine(question, chunk) in embedding space.
+
+    Fusion and reranking both produce *relative* orders. `fusion_score` is
+    reciprocal-rank fusion, which is scale-free by construction — the top chunk
+    scores about the same whether the corpus answers the question or contains
+    nothing about it. That makes it useless for the one decision that matters
+    before citing a passage: is any of this actually about what was asked?
+
+    Cosine against the original question is an absolute quantity, so it can
+    answer that. Note the scale is embedder-specific (see
+    `config.ABSTAIN_MIN_SIMILARITY`): TF-IDF puts unrelated text near 0, while
+    BGE compresses everything into a narrow high band.
+    """
+    if not chunks:
+        return chunks
+    try:
+        qvec = np.asarray(embedder.embed_query(question), dtype=np.float32)
+        vectors = store.embedding_map([c["id"] for c in chunks])
+    except Exception:
+        return chunks  # never fail retrieval over a diagnostic score
+
+    qnorm = float(np.linalg.norm(qvec)) or 1.0
+    for chunk in chunks:
+        vec = vectors.get(chunk["id"])
+        if vec is None:
+            continue
+        vec = np.asarray(vec, dtype=np.float32)
+        vnorm = float(np.linalg.norm(vec)) or 1.0
+        chunk["question_similarity"] = round(
+            float(np.dot(qvec, vec) / (qnorm * vnorm)), 4
+        )
+    return chunks

@@ -11,6 +11,8 @@ from __future__ import annotations
 import re
 
 from .llm import LLMUnavailable, OfflineLLM
+from .prompts import CCS_SYSTEM as _CCS_SYSTEM
+from .prompts import FAITHFULNESS_SYSTEM as _FAITHFULNESS_SYSTEM
 
 _FAITHFULNESS_SCHEMA = {
     "type": "object",
@@ -32,35 +34,6 @@ _FAITHFULNESS_SCHEMA = {
     "additionalProperties": False,
 }
 
-_FAITHFULNESS_SYSTEM = """You are an expert factual auditor for a \
-retrieval-augmented generation system. You are given a generated narrative and \
-the retrieved context it was written from. Your job is to decide, claim by \
-claim, whether the narrative stayed inside its evidence.
-
-Extract every distinct factual claim from the narrative — one fact per claim, \
-as granular as possible — and mark each **supported** or **unsupported**.
-
-A claim is SUPPORTED when the context states it explicitly, or implies it so \
-directly that no additional knowledge is needed. Judge meaning over wording:
-- The context is a machine transcript, so it lacks punctuation and casing and \
-frequently garbles proper nouns ("michelle eligbe" for Mitchell Elegbe, \
-"flatterwave" for Flutterwave). A claim that corrects an obvious transcription \
-error of an entity already present is still supported.
-- Paraphrase, summarising several sentences into one, and reordering are all \
-fine. Do not require matching words.
-
-A claim is UNSUPPORTED when it adds a fact the context does not contain — \
-most often a date, figure, job title, or organisation that appears nowhere in \
-the passages, or a number that differs from the one stated. Outside knowledge \
-that happens to be true is still unsupported.
-
-Do NOT extract as claims: section headings, citation tags like [S1], linking \
-or framing phrases ("In conclusion", "According to the context"), and explicit \
-absence statements such as "No relevant information in the retrieved context." \
-Those carry no factual content and must not be scored.
-
-Judge only the claims present in the narrative. Omitting information from the \
-context is not a fault here."""
 
 _CCS_SCHEMA = {
     "type": "object",
@@ -92,37 +65,6 @@ _CCS_SCHEMA = {
     "additionalProperties": False,
 }
 
-_CCS_SYSTEM = """You evaluate how completely an AI-generated narrative covers \
-an entrepreneurial journey. This is a coverage measure, not an accuracy \
-measure: you are asking "which parts of the journey does this narrative let a \
-reader see?", never whether the narrative is true.
-
-Score each of six themes from 0.0 to 1.0 against this rubric:
-
-- **founder_name_company** — 1.0 both the founder and their company are stated \
-explicitly; 0.6-0.8 one of the two is vague or missing; 0.0-0.5 neither is clear.
-- **timeline_critical_events** — 1.0 three or more milestones WITH dates; \
-0.6-0.8 events present but dates thin or missing; 0.0-0.5 no usable sequence.
-- **key_success_markers** — 1.0 at least one concrete, specific achievement \
-(a funding amount, a user or revenue figure, profitability, a named award); \
-0.6-0.8 achievements named but vague; 0.0-0.5 none.
-- **ecosystem_influences** — 1.0 clear interaction with the ecosystem across \
-networks, finance, or infrastructure/policy; 0.6-0.8 mentioned without depth; \
-0.0-0.5 absent.
-- **challenges_resilience** — 1.0 at least one specific challenge AND how it \
-was addressed; 0.6-0.8 challenges named but the response is unexplained; \
-0.0-0.5 none.
-- **impact_ecosystem** — 1.0 concrete contribution beyond the company itself \
-(jobs created, people trained, financial inclusion, mentorship, policy \
-advocacy); 0.6-0.8 impact asserted without specifics; 0.0-0.5 none.
-
-Important: a section that honestly reports "No relevant information in the \
-retrieved context" scores low for coverage — that is correct behaviour by the \
-narrative but still means the theme is not covered. Do not reward or punish \
-the narrative for the honesty; just score the coverage.
-
-List every theme scoring below 0.6 in missing_themes, using the theme keys \
-above. Give a one-sentence summary naming the strongest and weakest themes."""
 
 
 def evaluate_faithfulness(llm, narrative: str, chunks: list[dict]) -> dict:

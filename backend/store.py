@@ -17,6 +17,10 @@ import numpy as np
 from . import config
 
 
+class StoreError(RuntimeError):
+    """A write the store refuses to perform, raised before anything changes."""
+
+
 def _cosine_top(query_vec: np.ndarray, matrix: np.ndarray, k: int) -> list[tuple[int, float]]:
     if matrix.size == 0:
         return []
@@ -171,6 +175,24 @@ class MongoStore:
     def replace_all(
         self, chunks: list[dict], embeddings: np.ndarray, sources: list[dict]
     ) -> None:
+        # Refuse to write vectors this store cannot serve. See
+        # config.MAX_MONGO_EMBEDDING_DIM: writing ~20,000-d sparse TF-IDF
+        # vectors densely once filled an Atlas free tier and silently killed
+        # $vectorSearch. Failing here keeps the existing corpus intact, which
+        # is the whole point — delete_many() is the next statement.
+        if len(chunks) and embeddings.ndim == 2:
+            dims = int(embeddings.shape[1])
+            if dims > config.MAX_MONGO_EMBEDDING_DIM:
+                raise StoreError(
+                    f"refusing to write {dims}-d embeddings to MongoDB (limit "
+                    f"{config.MAX_MONGO_EMBEDDING_DIM}). This usually means the "
+                    "embedding backend fell back to TF-IDF: its vectors are "
+                    "mostly zeros, they would consume roughly "
+                    f"{dims * 8 * len(chunks) / 1024 / 1024:.0f} MB stored "
+                    "densely, and they cannot match a $vectorSearch index "
+                    "provisioned for a smaller dimension. Fix the embedder "
+                    "(check the warnings at startup) or set VECTOR_STORE=local."
+                )
         self.col.delete_many({})
         if chunks:
             docs = []

@@ -24,6 +24,8 @@ data/transcripts/*
 # Evaluation run history is a local baseline, not a shared artifact.
 data/eval/runs/
 data/eval/latest.json
+# Corpus backups: your collected media, never ours to publish.
+data/backups/
 
 # Third-party paper PDF — read it at the SSRN link in the README instead of
 # redistributing a copyrighted work.

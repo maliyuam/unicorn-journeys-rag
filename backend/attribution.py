@@ -23,6 +23,7 @@ import logging
 import re
 
 from .llm import LLMUnavailable
+from .prompts import ATTRIBUTION_SYSTEM as _SYSTEM
 
 log = logging.getLogger("unicorn_rag.attribution")
 
@@ -43,43 +44,6 @@ _VERDICT_SCHEMA = {
     "additionalProperties": False,
 }
 
-_SYSTEM = """You audit whether a transcript really concerns the person it was \
-filed under, for a research corpus of founder biographies. A wrong attribution \
-puts a stranger's career into a founder's record, with citations that look \
-entirely legitimate, so this judgement matters more than it may appear.
-
-You will be given a founder's name, their company, and excerpts from a \
-transcript that was attributed to them. Decide which is true:
-
-- **speaker** — the founder is one of the speakers. Interviews, keynotes, and \
-podcast appearances where they talk. Look for self-introductions, a host \
-addressing them, or first-person accounts matching their known company.
-- **discussed** — the founder does not speak, but the transcript is \
-substantively about them or the company they built.
-- **absent** — the founder neither speaks nor is a subject. This includes a \
-different person who happens to share a surname, and panels or roundups where \
-they were billed but never appear.
-
-Critical: these are MACHINE transcripts. Proper nouns are frequently garbled, \
-and this is the single most common reason to misjudge a source:
-- "Tosin Eniolorunda" has appeared as "Tosi and La"
-- "Moniepoint" as "moneyo Inc money point"
-- "Halan" as "Helen"
-- "Mitchell Elegbe" as "michelle eligbe", "Flutterwave" as "flatterwave"
-Treat a plausible phonetic match as the real name. Judge by who the speaker \
-evidently *is* — the company they describe running, the events they claim — \
-not by exact spelling.
-
-Companies also rename. Moniepoint was TeamApt; a current name can be absent \
-from an older recording while the transcript is unmistakably about that \
-company.
-
-Set identified_as to who the transcript actually appears to be about or by — \
-the founder's name if it matches, otherwise the other person or topic. Quote a \
-short phrase in evidence. Only use high confidence when the excerpts settle \
-it; if the excerpts are too thin to tell, say low and explain what is missing. \
-Absent with high confidence is a deletion recommendation, so hold it to that \
-standard."""
 
 
 def _name_tokens(founder: str, company: str) -> list[str]:

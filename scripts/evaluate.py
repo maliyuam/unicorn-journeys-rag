@@ -96,6 +96,22 @@ def main() -> int:
             for r in lost:
                 print(f"    {r['id']}  {r['question'][:62]}")
 
+    abstention = result.get("abstention")
+    if abstention:
+        print("\nABSTENTION (questions the corpus cannot answer)")
+        print(f"  refused correctly    {abstention['abstained']}/{abstention['total']}")
+        print(f"  false answer rate    {abstention['false_answer_rate']:.3f}"
+              "   (answered with citations when nothing supported it)")
+        wrong = [r for r in abstention["rows"] if not r["abstained"]]
+        if wrong:
+            print("\n  answered when it should not have:")
+            for r in wrong:
+                print(f"    {r['id']}  {r['question'][:60]}")
+                print(f"         offered {r['citations_offered']} citation(s); "
+                      f"{r['why_unanswerable']}")
+        else:
+            print("  no unanswerable question received a citation.")
+
     if save:
         print("\nbaseline saved to data/eval/latest.json")
     return 0
